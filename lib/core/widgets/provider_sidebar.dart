@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import '../../providers/navigation_provider.dart';
-import '../../providers/bookings_provider.dart';
-import '../../providers/profile_provider.dart';
+import 'package:khadematy_web/provider/shell/providers/navigation_provider.dart';
+import 'package:khadematy_web/provider/bookings/providers/bookings_provider.dart';
+import 'package:khadematy_web/provider/profile/providers/profile_provider.dart';
+import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
 
 class ProviderSidebar extends StatelessWidget {
   const ProviderSidebar({super.key});
@@ -85,8 +86,8 @@ class ProviderSidebar extends StatelessWidget {
             ),
           ),
 
-          const Divider(height: 1),
-          const SizedBox(height: 16),
+          //const Divider(height: 1),
+          //const SizedBox(height: 16),
 
           // Navigation Links
           Expanded(
@@ -98,8 +99,10 @@ class ProviderSidebar extends StatelessWidget {
                   item: ProviderNavItem.dashboard,
                   title: 'لوحة التحكم',
                   icon: Icons.dashboard_outlined,
-                  isSelected: navProvider.selectedItem == ProviderNavItem.dashboard,
-                  onTap: () => navProvider.selectItem(ProviderNavItem.dashboard),
+                  isSelected:
+                      navProvider.selectedItem == ProviderNavItem.dashboard,
+                  onTap: () =>
+                      navProvider.selectItem(ProviderNavItem.dashboard),
                 ),
                 const SizedBox(height: 4),
                 _buildNavItem(
@@ -107,11 +110,13 @@ class ProviderSidebar extends StatelessWidget {
                   item: ProviderNavItem.bookingRequests,
                   title: 'طلبات الحجز',
                   icon: Icons.mark_email_unread_outlined,
-                  isSelected: navProvider.selectedItem == ProviderNavItem.bookingRequests,
+                  isSelected: navProvider.selectedItem ==
+                      ProviderNavItem.bookingRequests,
                   badgeText: '${bookingsProvider.pendingRequestsCount} جديد',
                   badgeColor: AppColors.goldLight,
                   badgeTextColor: AppColors.goldDark,
-                  onTap: () => navProvider.selectItem(ProviderNavItem.bookingRequests),
+                  onTap: () =>
+                      navProvider.selectItem(ProviderNavItem.bookingRequests),
                 ),
                 const SizedBox(height: 4),
                 _buildNavItem(
@@ -119,8 +124,10 @@ class ProviderSidebar extends StatelessWidget {
                   item: ProviderNavItem.confirmedBookings,
                   title: 'الحجوزات',
                   icon: Icons.event_available_outlined,
-                  isSelected: navProvider.selectedItem == ProviderNavItem.confirmedBookings,
-                  onTap: () => navProvider.selectItem(ProviderNavItem.confirmedBookings),
+                  isSelected: navProvider.selectedItem ==
+                      ProviderNavItem.confirmedBookings,
+                  onTap: () =>
+                      navProvider.selectItem(ProviderNavItem.confirmedBookings),
                 ),
                 const SizedBox(height: 4),
                 _buildNavItem(
@@ -128,8 +135,10 @@ class ProviderSidebar extends StatelessWidget {
                   item: ProviderNavItem.myServices,
                   title: 'خدماتي',
                   icon: Icons.category_outlined,
-                  isSelected: navProvider.selectedItem == ProviderNavItem.myServices,
-                  onTap: () => navProvider.selectItem(ProviderNavItem.myServices),
+                  isSelected:
+                      navProvider.selectedItem == ProviderNavItem.myServices,
+                  onTap: () =>
+                      navProvider.selectItem(ProviderNavItem.myServices),
                 ),
                 const SizedBox(height: 4),
                 _buildNavItem(
@@ -137,8 +146,10 @@ class ProviderSidebar extends StatelessWidget {
                   item: ProviderNavItem.reviews,
                   title: 'التقييمات',
                   icon: Icons.star_border_outlined,
-                  isSelected: navProvider.selectedItem == ProviderNavItem.reviews,
-                  badgeText: '★ ${profileProvider.averageRating.toStringAsFixed(1)}',
+                  isSelected:
+                      navProvider.selectedItem == ProviderNavItem.reviews,
+                  badgeText:
+                      '★ ${profileProvider.averageRating.toStringAsFixed(1)}',
                   badgeColor: AppColors.goldLight,
                   badgeTextColor: AppColors.goldDark,
                   onTap: () => navProvider.selectItem(ProviderNavItem.reviews),
@@ -149,7 +160,8 @@ class ProviderSidebar extends StatelessWidget {
                   item: ProviderNavItem.profile,
                   title: 'الملف الشخصي',
                   icon: Icons.badge_outlined,
-                  isSelected: navProvider.selectedItem == ProviderNavItem.profile,
+                  isSelected:
+                      navProvider.selectedItem == ProviderNavItem.profile,
                   onTap: () => navProvider.selectItem(ProviderNavItem.profile),
                 ),
                 const SizedBox(height: 4),
@@ -158,7 +170,8 @@ class ProviderSidebar extends StatelessWidget {
                   item: ProviderNavItem.settings,
                   title: 'الإعدادات',
                   icon: Icons.settings_outlined,
-                  isSelected: navProvider.selectedItem == ProviderNavItem.settings,
+                  isSelected:
+                      navProvider.selectedItem == ProviderNavItem.settings,
                   onTap: () => navProvider.selectItem(ProviderNavItem.settings),
                 ),
               ],
@@ -169,7 +182,9 @@ class ProviderSidebar extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.all(16),
             child: InkWell(
-              onTap: () {
+              onTap: () async {
+                await context.read<AuthProvider>().signOut();
+                if (!context.mounted) return;
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('تم تسجيل الخروج بنجاح'),
@@ -181,20 +196,21 @@ class ProviderSidebar extends StatelessWidget {
               },
               borderRadius: BorderRadius.circular(12),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.errorBg,
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.errorBorder, width: 1),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.logout, size: 18, color: AppColors.error),
+                    const Icon(Icons.logout, size: 18, color: AppColors.primary),
                     const SizedBox(width: 12),
                     Text(
                       'تسجيل الخروج',
                       style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.error,
+                        color: AppColors.primary,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -241,21 +257,24 @@ class ProviderSidebar extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color: isSelected ? AppColors.burgundy : AppColors.textSecondary,
+                color:
+                    isSelected ? AppColors.burgundy : AppColors.textSecondary,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: AppTextStyles.titleMedium.copyWith(
-                    color: isSelected ? AppColors.burgundy : AppColors.textPrimary,
+                    color:
+                        isSelected ? AppColors.burgundy : AppColors.textPrimary,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
               ),
               if (badgeText != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: badgeColor ?? AppColors.surfaceLow,
                     borderRadius: BorderRadius.circular(20),

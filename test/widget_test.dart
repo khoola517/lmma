@@ -15,6 +15,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('خِدمتي'), findsWidgets);
-    expect(find.text('لوحة التحكم'), findsWidgets);
+    expect(find.text('بوابة شركاء النجاح'), findsWidgets);
   });
 }

@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_colors.dart';
-import '../../models/service_model.dart';
-import '../../models/booking_request_model.dart';
-import '../../models/confirmed_booking_model.dart';
-import '../../models/review_model.dart';
-import '../../models/notification_model.dart';
-import '../../models/provider_profile_model.dart';
+import 'package:khadematy_web/provider/bookings/models/booking_request_model.dart';
+import 'package:khadematy_web/provider/bookings/models/confirmed_booking_model.dart';
+import 'package:khadematy_web/provider/reviews/models/review_model.dart';
+import 'package:khadematy_web/admin/notifications/models/admin_notification_model.dart';
+import 'package:khadematy_web/provider/profile/models/provider_profile_model.dart';
 
 /// بيانات تجريبية محلية مفصولة بالكامل ومخصصة للعرض
 class ProviderMockData {
@@ -23,94 +22,6 @@ class ProviderMockData {
         overallRating: 4.9,
         completedBookingsCount: 128,
       );
-
-  static List<ServiceModel> get initialServices => [
-        const ServiceModel(
-          id: '1',
-          name: 'تنسيق كوشة ملكية فاخرة بالورود الطبيعية',
-          category: 'كوشات وتنسيق أفراح',
-          occasion: 'حفلات زفاف VIP',
-          price: 450000,
-          executionTimeHours: 6,
-          description:
-              'تنسيق ديكور كامل يشمل الكوشة الملكية المطعمة بالورود الطبيعية والإضاءات الخافتة، مع ممر العروس، وتنسيق طاولات المعازيم بطراز راقٍ وفخم.',
-          imageUrls: [
-            'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
-            'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
-          ],
-          isAvailable: true,
-        ),
-        const ServiceModel(
-          id: '2',
-          name: 'كيك مناسبات 4 طبقات ملكي',
-          category: 'حلويات وكيك مناسبات',
-          occasion: 'حفلات زفاف وخطوبة',
-          price: 115000,
-          executionTimeHours: 4,
-          description:
-              'كيك زفاف 4 أدوار بحشوات بلجيكية ومكسرات محمصة، مزين بورود سكرية وأوراق ذهب عيار 24 صالحة للأكل، يكفي 180 شخص.',
-          imageUrls: [
-            'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=800&q=80',
-          ],
-          isAvailable: true,
-        ),
-        const ServiceModel(
-          id: '3',
-          name: 'تصوير وتوثيق سينمائي للحفل (VIP)',
-          category: 'تصوير وتوثيق',
-          occasion: 'حفلات زفاف وتخرج',
-          price: 280000,
-          executionTimeHours: 8,
-          description:
-              'طاقم تصوير نسائي/رجالي متكامل مع كاميرات سينمائية 4K ودرون داخلي، ألبوم فاخر حراري وفيديو تشويقي خلال 48 ساعة.',
-          imageUrls: [
-            'https://images.unsplash.com/photo-1537633552985-df8429e8048b?auto=format&fit=crop&w=800&q=80',
-          ],
-          isAvailable: true,
-        ),
-        const ServiceModel(
-          id: '4',
-          name: 'بوفيه ضيافة فاخر لـ 300 شخص',
-          category: 'ضيافة وبوفيهات',
-          occasion: 'حفلات زفاف ومؤتمرات',
-          price: 650000,
-          executionTimeHours: 5,
-          description:
-              'قائمة طعام ملكية شاملة المقبلات الشرقية والأطباق الرئيسية والحلويات والمشروبات مع أدوات فضية وطاقم خدمة مدرب.',
-          imageUrls: [
-            'https://images.unsplash.com/photo-1555244162-803834f70033?auto=format&fit=crop&w=800&q=80',
-          ],
-          isAvailable: true,
-        ),
-        const ServiceModel(
-          id: '5',
-          name: 'هندسة إضاءة وشاشات ليد للقاعة',
-          category: 'إضاءة وصوتيات',
-          occasion: 'كافة المناسبات',
-          price: 190000,
-          executionTimeHours: 4,
-          description:
-              'أنظمة إضاءة متحركة بيم وسبوت، وشاشات عرض عملاقة متزامنة مع الموسيقى والمؤثرات الضوئية الخاصة بممر العروس.',
-          imageUrls: [
-            'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=800&q=80',
-          ],
-          isAvailable: true,
-        ),
-        const ServiceModel(
-          id: '6',
-          name: 'ممر العروس ومداخل الضيوف الملكية',
-          category: 'كوشات وتنسيق أفراح',
-          occasion: 'حفلات زفاف',
-          price: 160000,
-          executionTimeHours: 3,
-          description:
-              'تجهيز مدخل متكامل مع ستاندات ذهبية فاخرة، وتوزيعات فواحة ومبخرة عود مع ديكور سجاد مخملي وإضاءات جانبية.',
-          imageUrls: [
-            'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=800&q=80',
-          ],
-          isAvailable: true,
-        ),
-      ];
 
   static List<BookingRequestModel> get initialBookingRequests => [
         BookingRequestModel(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../providers/auth_provider.dart';
+import 'package:khadematy_web/core/theme/app_colors.dart';
+import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,8 +13,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _identifierController = TextEditingController(text: 'contact@alandalus.com');
-  final _passwordController = TextEditingController(text: '••••••••');
+  final _identifierController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
 
@@ -30,19 +30,44 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
-    // Simulate pleasant network transition
-    await Future.delayed(const Duration(milliseconds: 600));
-
-    if (!mounted) return;
-
-    context.read<AuthProvider>().login(
+    final auth = context.read<AuthProvider>();
+    final success = await auth.signIn(
       email: _identifierController.text.trim(),
       password: _passwordController.text,
     );
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
-    Navigator.of(context).pushReplacementNamed('/dashboard');
+    if (success) {
+      if (auth.isAdmin) {
+        Navigator.of(context).pushReplacementNamed('/admin');
+      } else if (auth.isProviderApproved) {
+        Navigator.of(context).pushReplacementNamed('/dashboard');
+      } else if (auth.isPending || auth.isRejected) {
+        Navigator.of(context).pushReplacementNamed('/application-status');
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              auth.errorMessage ?? 'حساب غير مصرح له بالدخول لهذه البوابة',
+              style: GoogleFonts.cairo(),
+            ),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            auth.errorMessage ?? 'فشل تسجيل الدخول. يرجى التحقق من بياناتك',
+            style: GoogleFonts.cairo(),
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
   }
 
   @override
@@ -54,32 +79,6 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: const Color(0xFFFAF7F2),
       body: Stack(
         children: [
-          // Background ambient soft radial glows
-          Positioned(
-            top: -100,
-            right: size.width * 0.2,
-            child: Container(
-              width: 400,
-              height: 400,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.burgundy.withOpacity(0.05),
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: -80,
-            left: size.width * 0.15,
-            child: Container(
-              width: 350,
-              height: 350,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.gold.withOpacity(0.07),
-              ),
-            ),
-          ),
-
           // Main Content
           Center(
             child: SingleChildScrollView(
@@ -90,7 +89,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: AppColors.burgundy.withOpacity(0.1)),
+                    border:
+                        Border.all(color: AppColors.burgundy.withOpacity(0.1)),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.burgundy.withOpacity(0.08),
@@ -152,7 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _buildBrandingSide({bool isCompact = false}) {
     return Container(
       padding: EdgeInsets.all(isCompact ? 24 : 36),
-      color: const Color(0xFFFCFAF7),
+      // color: const Color(0xFFFCFAF7),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
@@ -162,7 +162,7 @@ class _LoginScreenState extends State<LoginScreen> {
             width: 60,
             height: 60,
             decoration: BoxDecoration(
-              color: const Color(0xFFFAF7F2),
+              ///color: const Color(0xFFFAF7F2),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: AppColors.burgundy.withOpacity(0.15)),
               boxShadow: [
@@ -267,24 +267,24 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
             const SizedBox(height: 4),
-            Text(
-              'أدخل بيانات حسابك للمتابعة للوحة التحكم',
-              style: GoogleFonts.cairo(
-                fontSize: 13,
-                color: const Color(0xFF8C7B83),
-              ),
-            ),
-            const SizedBox(height: 24),
+            // Text(
+            //   'أدخل بيانات حسابك للمتابعة للوحة التحكم',
+            //   style: GoogleFonts.cairo(
+            //     fontSize: 13,
+            //     color: const Color(0xFF8C7B83),
+            //   ),
+            // ),
+            // const SizedBox(height: 24),
 
             // Identifier
-            Text(
-              'اسم المستخدم أو البريد الإلكتروني',
-              style: GoogleFonts.cairo(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF4A3E44),
-              ),
-            ),
+            // Text(
+            //   'اسم المستخدم أو البريد الإلكتروني',
+            //   style: GoogleFonts.cairo(
+            //     fontSize: 13,
+            //     fontWeight: FontWeight.w600,
+            //     color: const Color(0xFF4A3E44),
+            //   ),
+            // ),
             const SizedBox(height: 8),
             TextFormField(
               controller: _identifierController,
@@ -294,25 +294,25 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontSize: 13,
                   color: const Color(0xFF8C7B83),
                 ),
-                prefixIcon: const Icon(
-                  Icons.person_outline,
-                  color: Color(0xFF8C7B83),
-                  size: 20,
-                ),
+                suffixIcon: Icon(Icons.person_2_outlined),
                 fillColor: const Color(0xFFFAF7F2),
                 filled: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.burgundy.withOpacity(0.15)),
+                  borderSide:
+                      BorderSide(color: AppColors.burgundy.withOpacity(0.15)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.burgundy.withOpacity(0.15)),
+                  borderSide:
+                      BorderSide(color: AppColors.burgundy.withOpacity(0.15)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.burgundy, width: 1.5),
+                  borderSide:
+                      const BorderSide(color: AppColors.burgundy, width: 1.5),
                 ),
               ),
               validator: (val) {
@@ -369,36 +369,39 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontSize: 13,
                   color: const Color(0xFF8C7B83),
                 ),
-                prefixIcon: const Icon(
-                  Icons.lock_outline,
-                  color: Color(0xFF8C7B83),
-                  size: 20,
-                ),
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     color: const Color(0xFF8C7B83),
                     size: 20,
                   ),
                   onPressed: () {
                     setState(() => _obscurePassword = !_obscurePassword);
                   },
-                  tooltip: _obscurePassword ? 'إظهار كلمة المرور' : 'إخفاء كلمة المرور',
+                  tooltip: _obscurePassword
+                      ? 'إظهار كلمة المرور'
+                      : 'إخفاء كلمة المرور',
                 ),
                 fillColor: const Color(0xFFFAF7F2),
                 filled: true,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                contentPadding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.burgundy.withOpacity(0.15)),
+                  borderSide:
+                      BorderSide(color: AppColors.burgundy.withOpacity(0.15)),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: AppColors.burgundy.withOpacity(0.15)),
+                  borderSide:
+                      BorderSide(color: AppColors.burgundy.withOpacity(0.15)),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.burgundy, width: 1.5),
+                  borderSide:
+                      const BorderSide(color: AppColors.burgundy, width: 1.5),
                 ),
               ),
               validator: (val) {
@@ -433,19 +436,12 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'تسجيل الدخول',
-                            style: GoogleFonts.cairo(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.arrow_back, size: 18), // Arrow pointing in reading flow
-                        ],
+                    : Text(
+                        'تسجيل الدخول',
+                        style: GoogleFonts.cairo(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
               ),
             ),
@@ -459,8 +455,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   top: BorderSide(color: AppColors.burgundy.withOpacity(0.08)),
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     'ليس لديك حساب بعد؟ ',

@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import '../../providers/profile_provider.dart';
-import '../../providers/navigation_provider.dart';
+import 'package:khadematy_web/provider/profile/providers/profile_provider.dart';
+import 'package:khadematy_web/provider/shell/providers/navigation_provider.dart';
 
 class ProviderHeader extends StatelessWidget {
-  final String title;
+  final String? title;
   final ValueChanged<String>? onSearch;
 
   const ProviderHeader({
     super.key,
-    required this.title,
+    this.title,
     this.onSearch,
   });
 
@@ -19,14 +19,13 @@ class ProviderHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final profileProvider = context.watch<ProfileProvider>();
     final navProvider = context.watch<NavigationProvider>();
-    final profile = profileProvider.profile;
     final unreadCount = profileProvider.unreadNotificationsCount;
 
     return Container(
       height: 70,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: const BoxDecoration(
-        color: AppColors.cardBg,
+        color: AppColors.creamBg,
         border: Border(
           bottom: BorderSide(color: AppColors.border, width: 1),
         ),
@@ -40,30 +39,25 @@ class ProviderHeader extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // Mobile / Tablet Menu Button
-          IconButton(
-            icon: const Icon(Icons.menu, color: AppColors.textPrimary),
-            onPressed: () => navProvider.toggleSidebar(),
-            tooltip: 'القائمة الجانبية',
-          ),
-          const SizedBox(width: 8),
-
           // Search Field
           Expanded(
             child: Container(
               constraints: const BoxConstraints(maxWidth: 380),
               height: 42,
               decoration: BoxDecoration(
-                color: AppColors.surfaceLow,
+                color: AppColors.cardBg,
+                //color: AppColors.surfaceLow,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
               child: TextField(
                 onChanged: onSearch,
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textPrimary),
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textPrimary),
                 decoration: InputDecoration(
                   hintText: 'ابحث عن حجز، عميل، أو خدمة...',
-                  hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                  hintStyle: AppTextStyles.bodySmall
+                      .copyWith(color: AppColors.textMuted),
                   prefixIcon: const Icon(
                     Icons.search,
                     size: 20,
@@ -149,8 +143,11 @@ class ProviderHeader extends StatelessWidget {
                                     Expanded(
                                       child: Text(
                                         n.title,
-                                        style: AppTextStyles.labelMedium.copyWith(
-                                          fontWeight: n.isRead ? FontWeight.w600 : FontWeight.w800,
+                                        style:
+                                            AppTextStyles.labelMedium.copyWith(
+                                          fontWeight: n.isRead
+                                              ? FontWeight.w600
+                                              : FontWeight.w800,
                                           color: AppColors.textPrimary,
                                         ),
                                       ),
@@ -208,7 +205,7 @@ class ProviderHeader extends StatelessWidget {
                     child: Icon(
                       Icons.notifications_outlined,
                       size: 20,
-                      color: AppColors.textSecondary,
+                      color: AppColors.burgundy,
                     ),
                   ),
                 ),
@@ -222,7 +219,8 @@ class ProviderHeader extends StatelessWidget {
                         color: AppColors.burgundy,
                         shape: BoxShape.circle,
                       ),
-                      constraints: const BoxConstraints(minWidth: 14, minHeight: 14),
+                      constraints:
+                          const BoxConstraints(minWidth: 14, minHeight: 14),
                       child: Center(
                         child: Text(
                           '$unreadCount',
@@ -244,55 +242,23 @@ class ProviderHeader extends StatelessWidget {
           Container(height: 24, width: 1, color: AppColors.border),
           const SizedBox(width: 14),
 
-          // Provider Profile Quick Info
+          // Provider Profile Avatar
           InkWell(
             onTap: () => navProvider.selectItem(ProviderNavItem.profile),
             borderRadius: BorderRadius.circular(10),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              child: Row(
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            profile.businessName,
-                            style: AppTextStyles.labelLarge.copyWith(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.verified, size: 15, color: AppColors.burgundy),
-                        ],
-                      ),
-                      Text(
-                        'مزود معتمد • 4.9 ★',
-                        style: AppTextStyles.labelSmall.copyWith(
-                          color: AppColors.goldDark,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(width: 10),
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: AppColors.burgundy,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.gold, width: 1.5),
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.person, color: Colors.white, size: 20),
-                    ),
-                  ),
-                ],
+              child: Container(
+                width: 38,
+                height: 38,
+                decoration: BoxDecoration(
+                  color: AppColors.burgundy,
+                  shape: BoxShape.circle,
+                  //border: Border.all(color: AppColors.gold, width: 1.5),
+                ),
+                child: const Center(
+                  child: Icon(Icons.person, color: Colors.white, size: 20),
+                ),
               ),
             ),
           ),

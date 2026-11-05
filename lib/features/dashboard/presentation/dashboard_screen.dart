@@ -5,11 +5,11 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/custom_card.dart';
 import '../../../core/widgets/custom_button.dart';
 import '../../../core/widgets/status_badge.dart';
-import '../../../models/confirmed_booking_model.dart';
-import '../../../providers/navigation_provider.dart';
-import '../../../providers/bookings_provider.dart';
-import '../../../providers/services_provider.dart';
-import '../../../providers/profile_provider.dart';
+import 'package:khadematy_web/provider/bookings/models/confirmed_booking_model.dart';
+import 'package:khadematy_web/provider/shell/providers/navigation_provider.dart';
+import 'package:khadematy_web/provider/bookings/providers/bookings_provider.dart';
+import 'package:khadematy_web/provider/services/providers/services_provider.dart';
+import 'package:khadematy_web/provider/profile/providers/profile_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -27,12 +27,14 @@ class DashboardScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // 1. Welcome Banner
-          _buildWelcomeBanner(context, navProvider, profileProvider.profile.businessName),
+          _buildWelcomeBanner(
+              context, navProvider, profileProvider.profile.businessName),
 
           const SizedBox(height: 24),
 
           // 2. 4 Key Metric Cards
-          _buildMetricsGrid(context, bookingsProvider, servicesProvider, profileProvider),
+          _buildMetricsGrid(
+              context, bookingsProvider, servicesProvider, profileProvider),
 
           const SizedBox(height: 28),
 
@@ -48,9 +50,11 @@ class DashboardScreen extends StatelessWidget {
                       flex: 3,
                       child: Column(
                         children: [
-                          _buildUrgentRequestsSection(context, navProvider, bookingsProvider),
+                          _buildUrgentRequestsSection(
+                              context, navProvider, bookingsProvider),
                           const SizedBox(height: 24),
-                          _buildUpcomingBookingsSection(context, navProvider, bookingsProvider),
+                          _buildUpcomingBookingsSection(
+                              context, navProvider, bookingsProvider),
                         ],
                       ),
                     ),
@@ -60,9 +64,10 @@ class DashboardScreen extends StatelessWidget {
                       flex: 2,
                       child: Column(
                         children: [
-                          _buildPerformanceKpiCard(context),
+                          _buildPerformanceKpiCard(context, bookingsProvider),
                           const SizedBox(height: 24),
-                          _buildTopServicesCard(context, navProvider, servicesProvider),
+                          _buildTopServicesCard(
+                              context, navProvider, servicesProvider),
                         ],
                       ),
                     ),
@@ -71,13 +76,16 @@ class DashboardScreen extends StatelessWidget {
               } else {
                 return Column(
                   children: [
-                    _buildUrgentRequestsSection(context, navProvider, bookingsProvider),
+                    _buildUrgentRequestsSection(
+                        context, navProvider, bookingsProvider),
                     const SizedBox(height: 24),
-                    _buildUpcomingBookingsSection(context, navProvider, bookingsProvider),
+                    _buildUpcomingBookingsSection(
+                        context, navProvider, bookingsProvider),
                     const SizedBox(height: 24),
-                    _buildPerformanceKpiCard(context),
+                    _buildPerformanceKpiCard(context, bookingsProvider),
                     const SizedBox(height: 24),
-                    _buildTopServicesCard(context, navProvider, servicesProvider),
+                    _buildTopServicesCard(
+                        context, navProvider, servicesProvider),
                   ],
                 );
               }
@@ -88,7 +96,8 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildWelcomeBanner(BuildContext context, NavigationProvider nav, String businessName) {
+  Widget _buildWelcomeBanner(
+      BuildContext context, NavigationProvider nav, String businessName) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -122,27 +131,28 @@ class DashboardScreen extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: AppColors.goldLight,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.goldBorder),
-                    ),
-                    child: Text(
-                      'لوحة التحكم المباشرة',
-                      style: AppTextStyles.labelSmall.copyWith(
-                        color: AppColors.goldDark,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+                  // Container(
+                  //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  //   decoration: BoxDecoration(
+                  //     color: AppColors.goldLight,
+                  //     borderRadius: BorderRadius.circular(12),
+                  //     border: Border.all(color: AppColors.goldBorder),
+                  //   ),
+                  //   child: Text(
+                  //     'لوحة التحكم المباشرة',
+                  //     style: AppTextStyles.labelSmall.copyWith(
+                  //       color: AppColors.goldDark,
+                  //       fontWeight: FontWeight.w700,
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
                 'إليك نظرة سريعة على مؤشرات أداء أعمالك والطلبات التي تنتظر اتخاذ إجراءك اليوم.',
-                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+                style: AppTextStyles.bodyMedium
+                    .copyWith(color: AppColors.textSecondary),
               ),
             ],
           );
@@ -151,18 +161,18 @@ class DashboardScreen extends StatelessWidget {
             spacing: 10,
             runSpacing: 8,
             children: [
-              CustomButton(
-                text: 'طلبات الحجز',
-                icon: Icons.mark_email_unread_outlined,
-                variant: ButtonVariant.outline,
-                onPressed: () => nav.selectItem(ProviderNavItem.bookingRequests),
-              ),
-              CustomButton(
-                text: 'إضافة خدمة جديدة',
-                icon: Icons.add,
-                variant: ButtonVariant.primary,
-                onPressed: () => nav.selectItem(ProviderNavItem.myServices),
-              ),
+              // CustomButton(
+              //   text: 'طلبات الحجز',
+              //   icon: Icons.mark_email_unread_outlined,
+              //   variant: ButtonVariant.outline,
+              //   onPressed: () => nav.selectItem(ProviderNavItem.bookingRequests),
+              // ),
+              // CustomButton(
+              //   text: 'إضافة خدمة جديدة',
+              //   icon: Icons.add,
+              //   variant: ButtonVariant.primary,
+              //   onPressed: () => nav.selectItem(ProviderNavItem.myServices),
+              // ),
             ],
           );
 
@@ -195,10 +205,18 @@ class DashboardScreen extends StatelessWidget {
     ServicesProvider servicesProvider,
     ProfileProvider profileProvider,
   ) {
+    final totalBookings = bookingsProvider.totalConfirmedCount;
+    final pendingCount = bookingsProvider.pendingRequestsCount;
+    final totalRevenue = bookingsProvider.totalRevenue;
+    final formattedRevenue = _formatCurrency(totalRevenue);
+
     return LayoutBuilder(
       builder: (context, constraints) {
-        final crossAxisCount = constraints.maxWidth > 1050 ? 4 : (constraints.maxWidth > 580 ? 2 : 1);
-        final cardWidth = (constraints.maxWidth - ((crossAxisCount - 1) * 16)) / crossAxisCount;
+        final crossAxisCount = constraints.maxWidth > 1050
+            ? 4
+            : (constraints.maxWidth > 580 ? 2 : 1);
+        final cardWidth = (constraints.maxWidth - ((crossAxisCount - 1) * 16)) /
+            crossAxisCount;
 
         return Wrap(
           spacing: 16,
@@ -208,8 +226,10 @@ class DashboardScreen extends StatelessWidget {
               width: cardWidth,
               child: _buildMetricCard(
                 title: 'إجمالي الحجوزات',
-                value: '${profileProvider.profile.completedBookingsCount}',
-                subText: '+14% هذا الشهر',
+                value: '$totalBookings',
+                subText: bookingsProvider.inProgressCount > 0
+                    ? '${bookingsProvider.inProgressCount} قيد التنفيذ حالياً'
+                    : 'حجوزات معتمدة ومؤكدة',
                 subTextColor: AppColors.success,
                 icon: Icons.event_seat_outlined,
                 iconBg: AppColors.burgundyLight,
@@ -220,9 +240,12 @@ class DashboardScreen extends StatelessWidget {
               width: cardWidth,
               child: _buildMetricCard(
                 title: 'طلبات بانتظار الرد',
-                value: '${bookingsProvider.pendingRequestsCount}',
-                subText: 'تحتاج إجراء سريع',
-                subTextColor: AppColors.burgundy,
+                value: '$pendingCount',
+                subText: pendingCount > 0
+                    ? 'تحتاج إجراء سريع'
+                    : 'تم الرد على جميع الطلبات',
+                subTextColor:
+                    pendingCount > 0 ? AppColors.burgundy : AppColors.success,
                 icon: Icons.mark_email_unread_outlined,
                 iconBg: AppColors.goldLight,
                 iconColor: AppColors.goldDark,
@@ -232,8 +255,10 @@ class DashboardScreen extends StatelessWidget {
               width: cardWidth,
               child: _buildMetricCard(
                 title: 'إجمالي الإيرادات المعتمدة',
-                value: '1,850,000 ر.ي',
-                subText: 'مدفوعات مؤكدة',
+                value: formattedRevenue,
+                subText: totalBookings > 0
+                    ? 'من $totalBookings حجز معتمد'
+                    : 'مدفوعات مؤكدة',
                 subTextColor: AppColors.success,
                 icon: Icons.payments_outlined,
                 iconBg: AppColors.successBg,
@@ -278,7 +303,8 @@ class DashboardScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTextStyles.labelMedium
+                      .copyWith(color: AppColors.textSecondary),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -312,7 +338,8 @@ class DashboardScreen extends StatelessWidget {
               Container(
                 width: 6,
                 height: 6,
-                decoration: BoxDecoration(color: subTextColor, shape: BoxShape.circle),
+                decoration:
+                    BoxDecoration(color: subTextColor, shape: BoxShape.circle),
               ),
               const SizedBox(width: 6),
               Expanded(
@@ -356,7 +383,8 @@ class DashboardScreen extends StatelessWidget {
                         color: AppColors.burgundyLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.flash_on, color: AppColors.burgundy, size: 18),
+                      child: const Icon(Icons.flash_on,
+                          color: AppColors.burgundy, size: 18),
                     ),
                     const SizedBox(width: 10),
                     Flexible(
@@ -371,21 +399,24 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.burgundy,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '${requests.length} جديد',
-                        style: AppTextStyles.labelSmall.copyWith(color: Colors.white),
+                        style: AppTextStyles.labelSmall
+                            .copyWith(color: Colors.white),
                       ),
                     ),
                   ],
                 ),
               ),
               TextButton(
-                onPressed: () => nav.selectItem(ProviderNavItem.bookingRequests),
+                onPressed: () =>
+                    nav.selectItem(ProviderNavItem.bookingRequests),
                 child: Text(
                   'عرض كافة الطلبات ←',
                   style: AppTextStyles.labelMedium.copyWith(
@@ -456,7 +487,8 @@ class DashboardScreen extends StatelessWidget {
                               children: [
                                 Text(
                                   req.customerName,
-                                  style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w700),
+                                  style: AppTextStyles.titleMedium
+                                      .copyWith(fontWeight: FontWeight.w700),
                                 ),
                                 StatusBadge(
                                   label: 'متبقي ${req.remainingHours} ساعة',
@@ -467,7 +499,8 @@ class DashboardScreen extends StatelessWidget {
                             const SizedBox(height: 4),
                             Text(
                               '${req.eventType} • ${req.location}',
-                              style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
+                              style: AppTextStyles.bodySmall
+                                  .copyWith(color: AppColors.textSecondary),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
@@ -490,16 +523,31 @@ class DashboardScreen extends StatelessWidget {
                               CustomButton(
                                 text: 'قبول',
                                 height: 32,
-                                padding: const EdgeInsets.symmetric(horizontal: 12),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
                                 variant: ButtonVariant.primary,
-                                onPressed: () {
-                                  bookingsProvider.acceptBookingRequest(req.id);
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text('تم قبول حجز ${req.customerName} وتأكيده'),
-                                      backgroundColor: AppColors.burgundy,
-                                    ),
-                                  );
+                                onPressed: () async {
+                                  final success = await bookingsProvider
+                                      .acceptBookingRequest(req.id);
+                                  if (context.mounted) {
+                                    if (success) {
+                                      context
+                                          .read<ProfileProvider>()
+                                          .incrementBookingsCount();
+                                    }
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                        content: Text(
+                                          success
+                                              ? 'تم قبول حجز ${req.customerName} وتأكيده بنجاح'
+                                              : 'تعذر قبول الحجز، يرجى المحاولة لاحقاً',
+                                        ),
+                                        backgroundColor: success
+                                            ? AppColors.burgundy
+                                            : AppColors.error,
+                                      ),
+                                    );
+                                  }
                                 },
                               ),
                             ],
@@ -540,7 +588,8 @@ class DashboardScreen extends StatelessWidget {
                         color: AppColors.goldLight,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: const Icon(Icons.event_available, color: AppColors.goldDark, size: 18),
+                      child: const Icon(Icons.event_available,
+                          color: AppColors.goldDark, size: 18),
                     ),
                     const SizedBox(width: 10),
                     Flexible(
@@ -557,7 +606,8 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
               TextButton(
-                onPressed: () => nav.selectItem(ProviderNavItem.confirmedBookings),
+                onPressed: () =>
+                    nav.selectItem(ProviderNavItem.confirmedBookings),
                 child: Text(
                   'عرض جدول الحجوزات ←',
                   style: AppTextStyles.labelMedium.copyWith(
@@ -571,96 +621,117 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 16),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: bookings.take(3).length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final b = bookings[index];
-              return Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.border),
+          if (bookings.isEmpty)
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Center(
+                child: Text(
+                  'لا توجد حجوزات مؤكدة حالياً',
+                  style: AppTextStyles.bodyMedium
+                      .copyWith(color: AppColors.textSecondary),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLow,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            b.eventDateString.split(' ').first,
-                            style: AppTextStyles.headlineSmall.copyWith(
-                              color: AppColors.burgundy,
-                              fontWeight: FontWeight.w800,
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: bookings.take(3).length,
+              separatorBuilder: (context, index) => const SizedBox(height: 12),
+              itemBuilder: (context, index) {
+                final b = bookings[index];
+                return Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.cardBg,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceLow,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Column(
+                          children: [
+                            Text(
+                              b.eventDateString.split(' ').first,
+                              style: AppTextStyles.headlineSmall.copyWith(
+                                color: AppColors.burgundy,
+                                fontWeight: FontWeight.w800,
+                              ),
                             ),
-                          ),
-                          Text(
-                            b.eventDateString.split(' ').length > 1
-                                ? b.eventDateString.split(' ')[1]
-                                : '',
-                            style: AppTextStyles.labelSmall.copyWith(color: AppColors.textMuted),
-                          ),
-                        ],
+                            Text(
+                              b.eventDateString.split(' ').length > 1
+                                  ? b.eventDateString.split(' ')[1]
+                                  : '',
+                              style: AppTextStyles.labelSmall
+                                  .copyWith(color: AppColors.textMuted),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                b.customerName,
-                                style: AppTextStyles.titleMedium.copyWith(fontWeight: FontWeight.w700),
-                              ),
-                              const SizedBox(width: 8),
-                              StatusBadge(
-                                label: b.status == ConfirmedBookingStatus.inProgress
-                                    ? 'قيد التنفيذ'
-                                    : 'مؤكد',
-                                type: b.status == ConfirmedBookingStatus.inProgress
-                                    ? StatusBadgeType.inProgress
-                                    : StatusBadgeType.confirmed,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 3),
-                          Text(
-                            '${b.serviceName} • ${b.customerLocation}',
-                            style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Text(
+                                  b.customerName,
+                                  style: AppTextStyles.titleMedium
+                                      .copyWith(fontWeight: FontWeight.w700),
+                                ),
+                                const SizedBox(width: 8),
+                                StatusBadge(
+                                  label: b.status ==
+                                          ConfirmedBookingStatus.inProgress
+                                      ? 'قيد التنفيذ'
+                                      : 'مؤكد',
+                                  type: b.status ==
+                                          ConfirmedBookingStatus.inProgress
+                                      ? StatusBadgeType.inProgress
+                                      : StatusBadgeType.confirmed,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              '${b.serviceName} • ${b.customerLocation}',
+                              style: AppTextStyles.bodySmall
+                                  .copyWith(color: AppColors.textSecondary),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      '${b.totalAmount.toStringAsFixed(0)} ر.ي',
-                      style: AppTextStyles.titleMedium.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
+                      const SizedBox(width: 12),
+                      Text(
+                        '${b.totalAmount.toStringAsFixed(0)} ر.ي',
+                        style: AppTextStyles.titleMedium.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+                    ],
+                  ),
+                );
+              },
+            ),
         ],
       ),
     );
   }
 
-  Widget _buildPerformanceKpiCard(BuildContext context) {
+  Widget _buildPerformanceKpiCard(
+      BuildContext context, BookingsProvider bookingsProvider) {
+    final rate = bookingsProvider.acceptanceRate;
+    final ratePercentage = '${(rate * 100).toStringAsFixed(0)}%';
+
     return CustomCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -674,7 +745,8 @@ class DashboardScreen extends StatelessWidget {
                   color: AppColors.burgundyLight,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.analytics_outlined, color: AppColors.burgundy, size: 18),
+                child: const Icon(Icons.analytics_outlined,
+                    color: AppColors.burgundy, size: 18),
               ),
               const SizedBox(width: 10),
               Flexible(
@@ -692,19 +764,30 @@ class DashboardScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(height: 1),
           const SizedBox(height: 18),
-          _buildKpiProgressItem('نسبة رضا العملاء', '98.4%', 0.984, AppColors.success),
+          _buildKpiProgressItem(
+              'نسبة رضا العملاء', '98.4%', 0.984, AppColors.success),
           const SizedBox(height: 14),
-          _buildKpiProgressItem('الالتزام بمواعيد التسليم', '100%', 1.0, AppColors.burgundy),
+          _buildKpiProgressItem(
+              'الالتزام بمواعيد التسليم', '100%', 1.0, AppColors.burgundy),
           const SizedBox(height: 14),
-          _buildKpiProgressItem('سرعة الرد على الطلبات', '94%', 0.94, AppColors.goldDark),
+          _buildKpiProgressItem(
+              'سرعة الرد على الطلبات', '94%', 0.94, AppColors.goldDark),
           const SizedBox(height: 14),
-          _buildKpiProgressItem('معدل قبول الحجوزات', '92%', 0.92, AppColors.info),
+          _buildKpiProgressItem(
+              'معدل قبول الحجوزات', ratePercentage, rate, AppColors.info),
         ],
       ),
     );
   }
 
-  Widget _buildKpiProgressItem(String title, String percentage, double value, Color color) {
+  static String _formatCurrency(num amount) {
+    final str = amount.toStringAsFixed(0);
+    final regExp = RegExp(r'\B(?=(\d{3})+(?!\d))');
+    return '${str.replaceAll(regExp, ',')} ر.ي';
+  }
+
+  Widget _buildKpiProgressItem(
+      String title, String percentage, double value, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -714,7 +797,8 @@ class DashboardScreen extends StatelessWidget {
             Flexible(
               child: Text(
                 title,
-                style: AppTextStyles.labelMedium.copyWith(color: AppColors.textPrimary),
+                style: AppTextStyles.labelMedium
+                    .copyWith(color: AppColors.textPrimary),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -797,7 +881,8 @@ class DashboardScreen extends StatelessWidget {
                       border: Border.all(color: AppColors.border),
                     ),
                     child: const Center(
-                      child: Icon(Icons.celebration, color: AppColors.burgundy, size: 22),
+                      child: Icon(Icons.celebration,
+                          color: AppColors.burgundy, size: 22),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -807,13 +892,15 @@ class DashboardScreen extends StatelessWidget {
                       children: [
                         Text(
                           s.name,
-                          style: AppTextStyles.labelLarge.copyWith(fontWeight: FontWeight.w700),
+                          style: AppTextStyles.labelLarge
+                              .copyWith(fontWeight: FontWeight.w700),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                         Text(
                           s.category,
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
+                          style: AppTextStyles.bodySmall
+                              .copyWith(color: AppColors.textMuted),
                         ),
                       ],
                     ),

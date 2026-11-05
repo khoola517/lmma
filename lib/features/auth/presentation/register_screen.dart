@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../providers/auth_provider.dart';
+import 'package:khadematy_web/core/theme/app_colors.dart';
+import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -36,14 +36,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     'صوتيات وإضاءة وهندسة مسرح',
     'خدمات مناسبات أخرى',
   ];
-
   final List<String> _cities = [
-    'صنعاء',
-    'عدن',
-    'المكلا وحضرموت',
-    'تعز',
-    'إب',
-    'مدن ومناطق أخرى',
+    'المكلا',
+    // 'صنعاء',
+    // 'عدن',
+    // 'المكلا وحضرموت',
+    // 'تعز',
+    // 'إب',
+    // 'مدن ومناطق أخرى',
   ];
 
   @override
@@ -83,72 +83,87 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
     setState(() => _isLoading = true);
 
-    await Future.delayed(const Duration(milliseconds: 1000));
-
-    if (!mounted) return;
-
-    context.read<AuthProvider>().register(
+    final auth = context.read<AuthProvider>();
+    final success = await auth.registerProvider(
       businessName: _businessNameController.text.trim(),
       email: _emailController.text.trim(),
+      password: _passwordController.text,
       phone: _phoneController.text.trim(),
       serviceType: _selectedCategory ?? 'خدمات مناسبات',
       city: _selectedCity ?? 'صنعاء',
       bio: _bioController.text.trim(),
     );
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
-    // Show success dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            const Icon(Icons.check_circle, color: AppColors.success, size: 28),
-            const SizedBox(width: 10),
-            Text(
-              'تم استلام طلبك بنجاح!',
-              style: GoogleFonts.cairo(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: const Color(0xFF2D2327),
+    if (success) {
+      // Show success dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white,
+          title: Row(
+            children: [
+              const Icon(Icons.check_circle,
+                  color: AppColors.success, size: 28),
+              const SizedBox(width: 10),
+              Text(
+                'تم استلام طلبك بنجاح!',
+                style: GoogleFonts.cairo(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: const Color(0xFF2D2327),
+                ),
+              ),
+            ],
+          ),
+          content: Text(
+            'شكراً لانضمامك إلى شبكة مزودي خدمات خِدمتي. تم إنشاء حسابك وإرسال طلب اعتماد نشاطك التجاري لمسؤولي المنصة، وسيتم إشعارك فور اكتمال المراجعة.',
+            style: GoogleFonts.cairo(
+              fontSize: 14,
+              height: 1.6,
+              color: const Color(0xFF6E6367),
+            ),
+          ),
+          actions: [
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.burgundy,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                Navigator.of(context)
+                    .pushReplacementNamed('/application-status');
+              },
+              child: Text(
+                'متابعة حالة الطلب',
+                style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
               ),
             ),
           ],
         ),
-        content: Text(
-          'شكراً لانضمامك إلى شبكة مزودي خدمات خِدمتي. تم إنشاء حسابك واعتماد بياناتك الأولية للانتقال للوحة التحكم.',
-          style: GoogleFonts.cairo(
-            fontSize: 14,
-            height: 1.6,
-            color: const Color(0xFF6E6367),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            auth.errorMessage ?? 'فشل تقديم الطلب. يرجى المحاولة لاحقاً',
+            style: GoogleFonts.cairo(),
           ),
+          backgroundColor: AppColors.error,
         ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.burgundy,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              Navigator.of(context).pushReplacementNamed('/dashboard');
-            },
-            child: Text(
-              'الدخول إلى لوحة التحكم',
-              style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -160,32 +175,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Ambient soft light background glows
-          Positioned(
-            top: -80,
-            right: size.width * 0.25,
-            child: Container(
-              width: 380,
-              height: 380,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.gold.withOpacity(0.09),
-              ),
-            ),
-          ),
-          Positioned(
-            top: size.height * 0.35,
-            left: 20,
-            child: Container(
-              width: 320,
-              height: 320,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.burgundy.withOpacity(0.04),
-              ),
-            ),
-          ),
-
           // Main Form Content
           SafeArea(
             child: SingleChildScrollView(
@@ -212,18 +201,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           // Top Decorative Identity Strip
-                          Container(
-                            height: 6,
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.burgundy,
-                                  AppColors.gold,
-                                  AppColors.burgundy,
-                                ],
-                              ),
-                            ),
-                          ),
+                          // Container(
+                          //   height: 6,
+                          //   decoration: const BoxDecoration(
+                          //     gradient: LinearGradient(
+                          //       colors: [
+                          //         AppColors.burgundy,
+                          //         AppColors.gold,
+                          //         AppColors.burgundy,
+                          //       ],
+                          //     ),
+                          //   ),
+                          // ),
 
                           Padding(
                             padding: EdgeInsets.all(isDesktop ? 36 : 20),
@@ -278,65 +267,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
         Stack(
           clipBehavior: Clip.none,
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFAF7F2),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE5DED4)),
-              ),
-              child: const Icon(
-                Icons.storefront,
-                color: AppColors.burgundy,
-                size: 34,
-              ),
-            ),
-            Positioned(
-              bottom: -4,
-              left: -4,
-              child: Container(
-                width: 22,
-                height: 22,
-                decoration: const BoxDecoration(
-                  color: AppColors.gold,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.stars,
-                  color: Colors.white,
-                  size: 14,
-                ),
-              ),
-            ),
+            // Container(
+            //   width: 64,
+            //   height: 64,
+            //   decoration: BoxDecoration(
+            //     color: const Color(0xFFFAF7F2),
+            //     borderRadius: BorderRadius.circular(16),
+            //     border: Border.all(color: const Color(0xFFE5DED4)),
+            //   ),
+            //   child: const Icon(
+            //     Icons.storefront,
+            //     color: AppColors.burgundy,
+            //     size: 34,
+            //   ),
+            // ),
+            // Positioned(
+            //   bottom: -4,
+            //   left: -4,
+            //   child: Container(
+            //     width: 22,
+            //     height: 22,
+            //     decoration: const BoxDecoration(
+            //       color: AppColors.gold,
+            //       shape: BoxShape.circle,
+            //     ),
+            //     child: const Icon(
+            //       Icons.stars,
+            //       color: Colors.white,
+            //       size: 14,
+            //     ),
+            //   ),
+            // ),
           ],
         ),
         const SizedBox(height: 16),
 
         // Verified Partner Pill Badge
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFAF7F2),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(color: const Color(0xFFE5DED4)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.verified, size: 16, color: AppColors.burgundy),
-              const SizedBox(width: 6),
-              Text(
-                'بوابة الشركاء ومزودي الخدمات الفاخرة',
-                style: GoogleFonts.cairo(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.burgundy,
-                ),
-              ),
-            ],
-          ),
-        ),
+        // Container(
+        //   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        //   decoration: BoxDecoration(
+        //     color: const Color(0xFFFAF7F2),
+        //     borderRadius: BorderRadius.circular(30),
+        //     border: Border.all(color: const Color(0xFFE5DED4)),
+        //   ),
+        //   child: Row(
+        //     mainAxisSize: MainAxisSize.min,
+        //     children: [
+        //       const Icon(Icons.verified, size: 16, color: AppColors.burgundy),
+        //       const SizedBox(width: 6),
+        //       Text(
+        //         'بوابة الشركاء ومزودي الخدمات الفاخرة',
+        //         style: GoogleFonts.cairo(
+        //           fontSize: 12,
+        //           fontWeight: FontWeight.w700,
+        //           color: AppColors.burgundy,
+        //         ),
+        //       ),
+        //     ],
+        //   ),
+        // ),
         const SizedBox(height: 12),
 
         // Main Title
@@ -418,13 +407,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: const Color(0xFF2E2527),
                     ),
                   ),
-                  Text(
-                    'بيانات الاتصال ومسؤول إدارة الحساب والنشاط',
-                    style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      color: const Color(0xFF6F6265),
-                    ),
-                  ),
+                  // Text(
+                  //   'بيانات الاتصال ومسؤول إدارة الحساب والنشاط',
+                  //   style: GoogleFonts.cairo(
+                  //     fontSize: 12,
+                  //     color: const Color(0xFF6F6265),
+                  //   ),
+                  // ),
                 ],
               ),
             ],
@@ -438,9 +427,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
             controller: _businessNameController,
             decoration: _inputDecoration(
               hint: 'مثال: مؤسسة الأندلس لتنسيق المناسبات والأفراح',
-              icon: Icons.badge_outlined,
+              icon: Icons.person_2_outlined,
             ),
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى إدخال اسم النشاط' : null,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'يرجى إدخال اسم النشاط'
+                : null,
           ),
           const SizedBox(height: 16),
 
@@ -453,7 +444,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _buildFieldLabel('البريد الإلكتروني للعمل'),
+                      _buildFieldLabel('البريد الإلكتروني '),
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _emailController,
@@ -463,7 +454,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           icon: Icons.alternate_email,
                         ),
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'يرجى إدخال البريد';
+                          if (v == null || v.trim().isEmpty)
+                            return 'يرجى إدخال البريد';
                           if (!v.contains('@')) return 'صيغة البريد غير صحيحة';
                           return null;
                         },
@@ -485,14 +477,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ],
             )
           else ...[
-            _buildFieldLabel('البريد الإلكتروني للعمل'),
+            _buildFieldLabel('البريد الإلكتروني'),
             const SizedBox(height: 6),
             TextFormField(
               controller: _emailController,
               textDirection: TextDirection.ltr,
               decoration: _inputDecoration(
                 hint: 'contact@alandalus.com',
-                icon: Icons.alternate_email,
+                icon: Icons.email_outlined,
               ),
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'يرجى إدخال البريد';
@@ -527,14 +519,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           icon: Icons.lock_outline,
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              _obscurePassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               size: 18,
                               color: const Color(0xFF6F6265),
                             ),
-                            onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                            onPressed: () => setState(
+                                () => _obscurePassword = !_obscurePassword),
                           ),
                         ),
-                        validator: (v) => (v == null || v.length < 6) ? 'كلمة المرور 6 أحرف على الأقل' : null,
+                        validator: (v) => (v == null || v.length < 6)
+                            ? 'كلمة المرور 6 أحرف على الأقل'
+                            : null,
                       ),
                     ],
                   ),
@@ -577,16 +574,22 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           icon: Icons.lock_outline,
                           suffixIcon: IconButton(
                             icon: Icon(
-                              _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
                               size: 18,
                               color: const Color(0xFF6F6265),
                             ),
-                            onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                            onPressed: () => setState(() =>
+                                _obscureConfirmPassword =
+                                    !_obscureConfirmPassword),
                           ),
                         ),
                         validator: (v) {
-                          if (v == null || v.isEmpty) return 'يرجى تأكيد كلمة المرور';
-                          if (v != _passwordController.text) return 'كلمات المرور غير متطابقة';
+                          if (v == null || v.isEmpty)
+                            return 'يرجى تأكيد كلمة المرور';
+                          if (v != _passwordController.text)
+                            return 'كلمات المرور غير متطابقة';
                           return null;
                         },
                       ),
@@ -606,14 +609,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 icon: Icons.lock_outline,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     size: 18,
                     color: const Color(0xFF6F6265),
                   ),
-                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
                 ),
               ),
-              validator: (v) => (v == null || v.length < 6) ? 'كلمة المرور 6 أحرف على الأقل' : null,
+              validator: (v) => (v == null || v.length < 6)
+                  ? 'كلمة المرور 6 أحرف على الأقل'
+                  : null,
             ),
             const SizedBox(height: 16),
             Row(
@@ -649,16 +657,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 icon: Icons.lock_outline,
                 suffixIcon: IconButton(
                   icon: Icon(
-                    _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    _obscureConfirmPassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
                     size: 18,
                     color: const Color(0xFF6F6265),
                   ),
-                  onPressed: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+                  onPressed: () => setState(
+                      () => _obscureConfirmPassword = !_obscureConfirmPassword),
                 ),
               ),
               validator: (v) {
                 if (v == null || v.isEmpty) return 'يرجى تأكيد كلمة المرور';
-                if (v != _passwordController.text) return 'كلمات المرور غير متطابقة';
+                if (v != _passwordController.text)
+                  return 'كلمات المرور غير متطابقة';
                 return null;
               },
             ),
@@ -713,13 +725,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: const Color(0xFF2E2527),
                     ),
                   ),
-                  Text(
-                    'تحديد التخصص الجغرافي ونوع الفعاليات التي تقدمها',
-                    style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      color: const Color(0xFF6F6265),
-                    ),
-                  ),
+                  // Text(
+                  //   'تحديد التخصص الجغرافي ونوع الفعاليات التي تقدمها',
+                  //   style: GoogleFonts.cairo(
+                  //     fontSize: 12,
+                  //     color: const Color(0xFF6F6265),
+                  //   ),
+                  // ),
                 ],
               ),
             ],
@@ -785,16 +797,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
             controller: _bioController,
             maxLines: 3,
             maxLength: 300,
-            buildCounter: (_, {required currentLength, required isFocused, maxLength}) => const SizedBox.shrink(),
+            buildCounter: (_,
+                    {required currentLength, required isFocused, maxLength}) =>
+                const SizedBox.shrink(),
             decoration: InputDecoration(
-              hintText: 'نبذة موجزة عن خبراتكم في تنظيم الحفلات، سعة القاعة التقريبية أو التجهيزات الفنية المميزة التي تقدمونها لضيوفكم...',
+              hintText:
+                  'نبذة موجزة عن خبراتكم في تنظيم الحفلات، سعة القاعة التقريبية أو التجهيزات الفنية المميزة التي تقدمونها لضيوفكم...',
               hintStyle: GoogleFonts.cairo(
                 fontSize: 13,
                 color: const Color(0xFF867275),
               ),
               fillColor: Colors.white,
               filled: true,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
                 borderSide: const BorderSide(color: Color(0xFFE5DED4)),
@@ -805,7 +821,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.burgundy, width: 1.5),
+                borderSide:
+                    const BorderSide(color: AppColors.burgundy, width: 1.5),
               ),
             ),
           ),
@@ -862,7 +879,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         fillColor: Colors.white,
         filled: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
           borderSide: const BorderSide(color: Color(0xFFE5DED4)),
@@ -876,7 +894,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           borderSide: const BorderSide(color: AppColors.burgundy, width: 1.5),
         ),
       ),
-      validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى إدخال رقم الهاتف' : null,
+      validator: (v) =>
+          (v == null || v.trim().isEmpty) ? 'يرجى إدخال رقم الهاتف' : null,
     );
   }
 
@@ -888,7 +907,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           value: cat,
           child: Text(
             cat,
-            style: GoogleFonts.cairo(fontSize: 13, color: const Color(0xFF2E2527)),
+            style:
+                GoogleFonts.cairo(fontSize: 13, color: const Color(0xFF2E2527)),
           ),
         );
       }).toList(),
@@ -909,7 +929,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
           value: city,
           child: Text(
             city,
-            style: GoogleFonts.cairo(fontSize: 13, color: const Color(0xFF2E2527)),
+            style:
+                GoogleFonts.cairo(fontSize: 13, color: const Color(0xFF2E2527)),
           ),
         );
       }).toList(),
@@ -924,7 +945,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   InputDecoration _inputDecoration({
     required String hint,
-    required IconData icon,
+    IconData? icon,
     Widget? suffixIcon,
   }) {
     return InputDecoration(
@@ -933,11 +954,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         fontSize: 13,
         color: const Color(0xFF867275),
       ),
-      prefixIcon: Icon(icon, color: const Color(0xFF6F6265), size: 20),
       suffixIcon: suffixIcon,
       fillColor: Colors.white,
       filled: true,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(10),
         borderSide: const BorderSide(color: Color(0xFFE5DED4)),
@@ -991,7 +1011,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const TextSpan(
-                    text: ' المعتمدة في منصة خِدمتي لضمان تجربة استثنائية لجميع العملاء.',
+                    text:
+                        ' المعتمدة في منصة خِدمتي لضمان تجربة استثنائية لجميع العملاء.',
                   ),
                 ],
               ),
@@ -1039,19 +1060,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ],
               )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'إرسال طلب التسجيل والانضمام',
-                    style: GoogleFonts.cairo(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Icon(Icons.arrow_back, size: 18),
-                ],
+            : Text(
+                'إرسال طلب التسجيل والانضمام',
+                style: GoogleFonts.cairo(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
       ),
     );
