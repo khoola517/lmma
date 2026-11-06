@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/theme/app_text_styles.dart';
@@ -304,16 +305,7 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           ] else if (reviews.isEmpty) ...[
             _buildEmptyState(context, provider),
           ] else ...[
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: reviews.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final r = reviews[index];
-                return _buildReviewCard(context, r, provider);
-              },
-            ),
+            _buildReviewsTable(context, reviews, provider),
           ],
         ],
       ),
@@ -531,114 +523,565 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     );
   }
 
-  Widget _buildReviewCard(
-      BuildContext context, ReviewModel review, ReviewsProvider provider) {
+  Widget _buildReviewsTable(
+      BuildContext context, List<ReviewModel> reviews, ReviewsProvider provider) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFEBE6DF)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final tableWidth =
+                constraints.maxWidth < 1100 ? 1100.0 : constraints.maxWidth;
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: tableWidth,
+                child: Column(
+                  children: [
+                    // Table Header Row
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFFAF8F5),
+                        border: Border(
+                          bottom: BorderSide(color: Color(0xFFEBE6DF)),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildTableHeader('العميل', flex: 3),
+                          _buildTableHeader('الخدمة', flex: 3),
+                          _buildTableHeader('التقييم', flex: 2),
+                          _buildTableHeader('تعليق العميل', flex: 4),
+                          _buildTableHeader('الرد الرسمي', flex: 3),
+                          _buildTableHeader('تاريخ التقييم', flex: 2),
+                          _buildTableHeader('الإجراءات',
+                              flex: 2, textAlign: TextAlign.center),
+                        ],
+                      ),
+                    ),
+
+                    // Table Rows
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: reviews.length,
+                      separatorBuilder: (_, __) =>
+                          const Divider(height: 1, color: Color(0xFFEBE6DF)),
+                      itemBuilder: (context, index) {
+                        final r = reviews[index];
+                        return _buildTableRow(context, r, index, provider);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTableHeader(String title,
+      {required int flex, TextAlign textAlign = TextAlign.start}) {
+    return Expanded(
+      flex: flex,
+      child: Text(
+        title,
+        textAlign: textAlign,
+        style: GoogleFonts.cairo(
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+          color: const Color(0xFF8C7B83),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTableRow(BuildContext context, ReviewModel review, int index,
+      ReviewsProvider provider) {
     final hasReply =
         review.providerReply != null && review.providerReply!.trim().isNotEmpty;
     final initialLetter = review.customerName.isNotEmpty
         ? review.customerName.substring(0, 1)
         : 'ع';
 
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      color: Colors.white,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Top Row: Avatar + Name + Rating Stars
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: ClipOval(
-                      child: review.customerAvatar.isNotEmpty
-                          ? Image.network(
-                              review.customerAvatar,
-                              fit: BoxFit.cover,
-                              errorBuilder: (c, e, s) =>
-                                  _buildAvatarFallback(initialLetter),
-                            )
-                          : _buildAvatarFallback(initialLetter),
-                    ),
+          // 1. العميل (الاسم + الصورة + بادج التوثيق)
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: const Color(0xFFEBE6DF)),
                   ),
-                  const SizedBox(width: 14),
-                  Column(
+                  child: ClipOval(
+                    child: review.customerAvatar.isNotEmpty
+                        ? Image.network(
+                            review.customerAvatar,
+                            fit: BoxFit.cover,
+                            errorBuilder: (c, e, s) =>
+                                _buildAvatarFallback(initialLetter),
+                          )
+                        : _buildAvatarFallback(initialLetter),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      Text(
+                        review.customerName,
+                        style: GoogleFonts.cairo(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF2D2327),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
                       Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
+                          const Icon(Icons.verified,
+                              size: 11, color: AppColors.success),
+                          const SizedBox(width: 3),
                           Text(
-                            review.customerName,
-                            style: AppTextStyles.labelLarge
-                                .copyWith(fontWeight: FontWeight.w800),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.successBg,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.verified,
-                                    size: 12, color: AppColors.success),
-                                const SizedBox(width: 3),
-                                Text(
-                                  'عميل موثق',
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.success,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
+                            'عميل موثق',
+                            style: GoogleFonts.cairo(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.success,
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 2),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 2. الخدمة المقيمة
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  review.serviceName,
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF2D2327),
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLow,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.room_service_outlined,
+                          size: 12, color: AppColors.burgundy),
+                      const SizedBox(width: 4),
                       Text(
-                        review.date,
-                        style: AppTextStyles.bodySmall
-                            .copyWith(color: AppColors.textMuted),
+                        'خدمة محجوزة',
+                        style: GoogleFonts.cairo(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.burgundy,
+                        ),
                       ),
                     ],
                   ),
-                ],
+                ),
+              ],
+            ),
+          ),
+
+          // 3. التقييم
+          Expanded(
+            flex: 2,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: List.generate(5, (i) {
+                    return Icon(
+                      i < review.rating.floor()
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
+                      color: const Color(0xFFF59E0B),
+                      size: 15,
+                    );
+                  }),
+                ),
+                const SizedBox(height: 3),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: AppColors.goldLight,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.goldBorder),
+                  ),
+                  child: Text(
+                    '${review.rating.toStringAsFixed(1)} ★',
+                    style: GoogleFonts.cairo(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.goldDark,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 4. تعليق العميل
+          Expanded(
+            flex: 4,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 12),
+              child: Text(
+                review.comment.isNotEmpty
+                    ? review.comment
+                    : 'لا يوجد تعليق مكتوب من العميل',
+                style: GoogleFonts.cairo(
+                  fontSize: 12,
+                  color: review.comment.isNotEmpty
+                      ? const Color(0xFF4A3E44)
+                      : const Color(0xFFB0A4A7),
+                  fontStyle: review.comment.isEmpty ? FontStyle.italic : null,
+                  height: 1.5,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              // Stars & numeric rating
+            ),
+          ),
+
+          // 5. الرد الرسمي
+          Expanded(
+            flex: 3,
+            child: hasReply
+                ? Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.burgundyLight,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppColors.burgundyLightBorder),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.check_circle,
+                                size: 12, color: AppColors.success),
+                            const SizedBox(width: 4),
+                            Text(
+                              'تم الرد',
+                              style: GoogleFonts.cairo(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          review.providerReply!,
+                          style: GoogleFonts.cairo(
+                            fontSize: 11,
+                            color: const Color(0xFF2D2327),
+                            height: 1.3,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  )
+                : Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: const Color(0xFFFDE68A)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.access_time_rounded,
+                            size: 12, color: Color(0xFFD97706)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'بانتظار الرد',
+                          style: GoogleFonts.cairo(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: const Color(0xFFB45309),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+          ),
+
+          // 6. تاريخ التقييم
+          Expanded(
+            flex: 2,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.schedule, size: 13, color: Color(0xFF8C7B83)),
+                const SizedBox(width: 4),
+                Flexible(
+                  child: Text(
+                    review.date,
+                    style: GoogleFonts.cairo(
+                      fontSize: 12,
+                      color: const Color(0xFF8C7B83),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // 7. الإجراءات
+          Expanded(
+            flex: 2,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (!hasReply)
+                  CustomButton(
+                    text: 'رد',
+                    icon: Icons.reply,
+                    variant: ButtonVariant.primary,
+                    height: 32,
+                    onPressed: () => _showReplyDialog(context, review),
+                  )
+                else ...[
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined,
+                        size: 18, color: AppColors.burgundy),
+                    tooltip: 'تعديل الرد',
+                    onPressed: () => _showReplyDialog(context, review),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline,
+                        size: 18, color: AppColors.error),
+                    tooltip: 'حذف الرد',
+                    onPressed: () =>
+                        _showDeleteReplyConfirmDialog(context, review),
+                  ),
+                ],
+                IconButton(
+                  icon: const Icon(Icons.visibility_outlined,
+                      size: 18, color: Color(0xFF8C7B83)),
+                  tooltip: 'عرض التفاصيل',
+                  onPressed: () => _showReviewDetailsDialog(context, review),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReviewDetailsDialog(BuildContext context, ReviewModel review) {
+    final hasReply =
+        review.providerReply != null && review.providerReply!.trim().isNotEmpty;
+    final initialLetter = review.customerName.isNotEmpty
+        ? review.customerName.substring(0, 1)
+        : 'ع';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.burgundyLight,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.rate_review_outlined,
+                  color: AppColors.burgundy, size: 22),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                'تفاصيل تقييم العميل',
+                style: GoogleFonts.cairo(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF2D2327),
+                ),
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 550,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Customer & Service Header Card
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAF8F5),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFEBE6DF)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: const BoxDecoration(shape: BoxShape.circle),
+                      child: ClipOval(
+                        child: review.customerAvatar.isNotEmpty
+                            ? Image.network(
+                                review.customerAvatar,
+                                fit: BoxFit.cover,
+                                errorBuilder: (c, e, s) =>
+                                    _buildAvatarFallback(initialLetter),
+                              )
+                            : _buildAvatarFallback(initialLetter),
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                review.customerName,
+                                style: GoogleFonts.cairo(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w800,
+                                  color: const Color(0xFF2D2327),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColors.successBg,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'عميل موثق',
+                                  style: GoogleFonts.cairo(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.success,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'الخدمة: ${review.serviceName} • ${review.date}',
+                            style: GoogleFonts.cairo(
+                              fontSize: 12,
+                              color: const Color(0xFF8C7B83),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Rating Stars
               Row(
                 children: [
                   ...List.generate(
                     5,
                     (i) => Icon(
-                      Icons.star_rounded,
-                      size: 20,
-                      color: i < review.rating.floor()
-                          ? AppColors.gold
-                          : AppColors.border,
+                      i < review.rating.floor()
+                          ? Icons.star_rounded
+                          : Icons.star_border_rounded,
+                      color: const Color(0xFFF59E0B),
+                      size: 22,
                     ),
                   ),
-                  const SizedBox(width: 6),
+                  const SizedBox(width: 8),
                   Container(
                     padding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                     decoration: BoxDecoration(
                       color: AppColors.goldLight,
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(color: AppColors.goldBorder),
                     ),
                     child: Text(
-                      review.rating.toStringAsFixed(1),
-                      style: AppTextStyles.labelSmall.copyWith(
+                      '${review.rating.toStringAsFixed(1)} من 5.0',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
                         fontWeight: FontWeight.w800,
                         color: AppColors.goldDark,
                       ),
@@ -646,158 +1089,105 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
                   ),
                 ],
               ),
-            ],
-          ),
+              const SizedBox(height: 14),
 
-          const SizedBox(height: 12),
+              // Comment
+              Text(
+                'تعليق العميل:',
+                style: GoogleFonts.cairo(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF4A3E44),
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: const Color(0xFFEBE6DF)),
+                ),
+                child: Text(
+                  review.comment.isNotEmpty
+                      ? review.comment
+                      : 'لم يكتب العميل تعليقاً نصياً، واكتفى بالتقييم بالنجوم.',
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
+                    height: 1.6,
+                    color: review.comment.isNotEmpty
+                        ? const Color(0xFF2D2327)
+                        : const Color(0xFF8C7B83),
+                  ),
+                ),
+              ),
 
-          // Service Pill Tag
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceLow,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.room_service,
-                    size: 14, color: AppColors.burgundy),
-                const SizedBox(width: 6),
+              // Provider Reply (if present)
+              if (hasReply) ...[
+                const SizedBox(height: 16),
                 Text(
-                  review.serviceName,
-                  style: AppTextStyles.labelSmall.copyWith(
-                    color: AppColors.burgundy,
+                  'ردك الرسمي:',
+                  style: GoogleFonts.cairo(
+                    fontSize: 13,
                     fontWeight: FontWeight.w700,
+                    color: AppColors.burgundy,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.burgundyLight,
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.burgundyLightBorder),
+                  ),
+                  child: Text(
+                    review.providerReply!,
+                    style: GoogleFonts.cairo(
+                      fontSize: 13,
+                      height: 1.6,
+                      color: const Color(0xFF2D2327),
+                    ),
                   ),
                 ),
               ],
-            ),
-          ),
-
-          if (review.comment.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            Text(
-              review.comment,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: AppColors.textPrimary,
-                height: 1.6,
-                fontSize: 14,
-              ),
-            ),
-          ],
-
-          // Provider Reply (if present)
-          if (hasReply) ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.burgundyLight,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.burgundyLightBorder),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(Icons.reply,
-                              size: 18, color: AppColors.burgundy),
-                          const SizedBox(width: 6),
-                          Text(
-                            'رد مقدم الخدمة الرسمي:',
-                            style: AppTextStyles.labelSmall.copyWith(
-                              color: AppColors.burgundy,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          InkWell(
-                            onTap: () => _showReplyDialog(context, review),
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.edit_outlined,
-                                      size: 14, color: AppColors.burgundy),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'تعديل',
-                                    style: AppTextStyles.labelSmall
-                                        .copyWith(color: AppColors.burgundy),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          InkWell(
-                            onTap: () =>
-                                _showDeleteReplyConfirmDialog(context, review),
-                            child: Padding(
-                              padding: const EdgeInsets.all(4),
-                              child: Row(
-                                children: [
-                                  const Icon(Icons.delete_outline,
-                                      size: 14, color: AppColors.error),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    'حذف',
-                                    style: AppTextStyles.labelSmall
-                                        .copyWith(color: AppColors.error),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    review.providerReply!,
-                    style: AppTextStyles.bodyMedium.copyWith(
-                      color: AppColors.textPrimary,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 14),
-          const Divider(height: 1),
-          const SizedBox(height: 8),
-
-          // Action row (Reply Button if not replied yet)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'معرف التقييم: ${review.id.length > 8 ? review.id.substring(0, 8) : review.id}',
-                style: AppTextStyles.bodySmall
-                    .copyWith(color: AppColors.textMuted, fontSize: 10),
-              ),
-              if (!hasReply)
-                CustomButton(
-                  text: 'الرد على التقييم',
-                  icon: Icons.reply,
-                  variant: ButtonVariant.ghost,
-                  height: 36,
-                  onPressed: () => _showReplyDialog(context, review),
-                ),
             ],
           ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'إغلاق',
+              style: GoogleFonts.cairo(
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF8C7B83),
+              ),
+            ),
+          ),
+          if (!hasReply)
+            CustomButton(
+              text: 'الرد على التقييم',
+              icon: Icons.reply,
+              height: 38,
+              onPressed: () {
+                Navigator.pop(ctx);
+                _showReplyDialog(context, review);
+              },
+            )
+          else
+            CustomButton(
+              text: 'تعديل الرد',
+              icon: Icons.edit_outlined,
+              height: 38,
+              variant: ButtonVariant.outline,
+              onPressed: () {
+                Navigator.pop(ctx);
+                _showReplyDialog(context, review);
+              },
+            ),
         ],
       ),
     );

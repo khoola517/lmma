@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:khadematy_web/core/config/supabase_config.dart';
 import 'package:khadematy_web/core/services/storage_service.dart';
+import 'package:khadematy_web/core/services/supabase_realtime_service.dart';
 import 'package:khadematy_web/data/mock/provider_mock_data.dart';
 import 'package:khadematy_web/provider/profile/models/provider_profile_model.dart';
 import 'package:khadematy_web/provider/reviews/models/review_model.dart';
@@ -18,6 +19,8 @@ class ProfileProvider extends ChangeNotifier {
   String? _errorMessage;
   String? _lastLoadedUserId;
   String? _lastLoadedProviderId;
+  final List<RealtimeSubscriptionToken> _realtimeTokens = [];
+  String? _subscribedUserId;
 
   ProfileProvider() {
     _profile = ProviderMockData.initialProfile;
@@ -260,6 +263,9 @@ class ProfileProvider extends ChangeNotifier {
 
       _lastLoadedUserId = resolvedUserId;
       _lastLoadedProviderId = targetProviderId;
+      if (resolvedUserId != null && resolvedUserId.isNotEmpty) {
+        _setupRealtime(resolvedUserId, targetProviderId);
+      }
     } catch (e) {
       debugPrint('Error in loadProfile: $e');
       _errorMessage = 'تعذر تحميل بيانات الملف الشخصي: $e';
@@ -461,5 +467,82 @@ class ProfileProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Error marking notification read in Supabase: $e');
     }
+  }
+
+  void _setupRealtime(String userId, String? providerId) {
+    if (_subscribedUserId == userId && _realtimeTokens.isNotEmpty) return;
+    _clearRealtimeSubscriptions();
+    _subscribedUserId = userId;
+
+    // 1. مزامنة الإشعارات الخاصة بهذا المستخدم
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'notifications',
+        filter: 'user_id=eq.$userId',
+        onInserted: (_) => _reloadNotifications(userId),
+        onUpdated: (_) => _reloadNotifications(userId),
+        onDeleted: (_) => _reloadNotifications(userId),
+      ),
+    );
+
+    // 2. مزامنة التقييمات
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'reviews',
+        onInserted: (_) => loadProfile(providerId: _lastLoadedProviderId, userId: _lastLoadedUserId, force: true),
+        onUpdated: (_) => loadProfile(providerId: _lastLoadedProviderId, userId: _lastLoadedUserId, force: true),
+        onDeleted: (_) => loadProfile(providerId: _lastLoadedProviderId, userId: _lastLoadedUserId, force: true),
+      ),
+    );
+
+    // 3. مزامنة الملف التعريفي
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'provider_profiles',
+        filter: 'user_id=eq.$userId',
+        onUpdated: (_) => loadProfile(providerId: _lastLoadedProviderId, userId: _lastLoadedUserId, force: true),
+      ),
+    );
+
+    // 4. إعادة المزامنة عند استعادة الاتصال
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.onReconnected(() {
+        loadProfile(providerId: _lastLoadedProviderId, userId: _lastLoadedUserId, force: true);
+      }),
+    );
+  }
+
+  Future<void> _reloadNotifications(String userId) async {
+    try {
+      final notifsRes = await SupabaseConfig.client
+          .from('notifications')
+          .select()
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .limit(20);
+
+      final notifsList = (notifsRes as List)
+          .map((n) => NotificationModel.fromJson(n as Map<String, dynamic>))
+          .toList();
+
+      _notifications = notifsList;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error reloading notifications in ProfileProvider: $e');
+    }
+  }
+
+  void _clearRealtimeSubscriptions() {
+    for (final token in _realtimeTokens) {
+      token.cancel();
+    }
+    _realtimeTokens.clear();
+    _subscribedUserId = null;
+  }
+
+  @override
+  void dispose() {
+    _clearRealtimeSubscriptions();
+    super.dispose();
   }
 }

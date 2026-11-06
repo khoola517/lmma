@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:khadematy_web/core/config/supabase_config.dart';
 import 'package:khadematy_web/core/constants/app_constants.dart';
+import 'package:khadematy_web/core/services/supabase_realtime_service.dart';
 import 'package:khadematy_web/provider/services/models/service_model.dart';
 
 class ServicesProvider extends ChangeNotifier {
@@ -11,9 +12,41 @@ class ServicesProvider extends ChangeNotifier {
   bool _isLoading = false;
   String? _errorMessage;
   String? _lastLoadedProviderId;
+  final List<RealtimeSubscriptionToken> _realtimeTokens = [];
 
   ServicesProvider() {
     loadCategories();
+    _initRealtime();
+  }
+
+  void _initRealtime() {
+    // 1. الاستماع لتحديثات التصنيفات لحظياً
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'categories',
+        onInserted: (_) => loadCategories(),
+        onUpdated: (_) => loadCategories(),
+        onDeleted: (_) => loadCategories(),
+      ),
+    );
+
+    // 2. الاستماع لتحديثات الخدمات لحظياً
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'services',
+        onInserted: (_) => loadServices(providerId: _lastLoadedProviderId, force: true),
+        onUpdated: (_) => loadServices(providerId: _lastLoadedProviderId, force: true),
+        onDeleted: (_) => loadServices(providerId: _lastLoadedProviderId, force: true),
+      ),
+    );
+
+    // 3. إعادة المزامنة عند استعادة الاتصال
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.onReconnected(() {
+        loadCategories();
+        loadServices(providerId: _lastLoadedProviderId, force: true);
+      }),
+    );
   }
 
   // Getters
@@ -441,5 +474,14 @@ class ServicesProvider extends ChangeNotifier {
       notifyListeners();
       return false;
     }
+  }
+
+  @override
+  void dispose() {
+    for (final token in _realtimeTokens) {
+      token.cancel();
+    }
+    _realtimeTokens.clear();
+    super.dispose();
   }
 }

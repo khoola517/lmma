@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:khadematy_web/core/config/supabase_config.dart';
+import 'package:khadematy_web/core/services/supabase_realtime_service.dart';
 import 'package:khadematy_web/data/mock/provider_mock_data.dart';
 import 'package:khadematy_web/provider/bookings/models/booking_request_model.dart';
 import 'package:khadematy_web/provider/bookings/models/confirmed_booking_model.dart';
@@ -15,10 +16,41 @@ class BookingsProvider extends ChangeNotifier {
   String? _errorMessage;
   String? _lastLoadedProviderId;
   String? _activeActionBookingId;
+  final List<RealtimeSubscriptionToken> _realtimeTokens = [];
 
   BookingsProvider() {
     // Initial load from Supabase or fallback
     loadBookings();
+    _initRealtime();
+  }
+
+  void _initRealtime() {
+    // 1. الاستماع لتحديثات الحجوزات لحظياً
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'bookings',
+        onInserted: (_) => loadBookings(providerId: _lastLoadedProviderId, force: true),
+        onUpdated: (_) => loadBookings(providerId: _lastLoadedProviderId, force: true),
+        onDeleted: (_) => loadBookings(providerId: _lastLoadedProviderId, force: true),
+      ),
+    );
+
+    // 2. الاستماع لتحديثات عناصر الحجز لحظياً
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'booking_items',
+        onInserted: (_) => loadBookings(providerId: _lastLoadedProviderId, force: true),
+        onUpdated: (_) => loadBookings(providerId: _lastLoadedProviderId, force: true),
+        onDeleted: (_) => loadBookings(providerId: _lastLoadedProviderId, force: true),
+      ),
+    );
+
+    // 3. إعادة المزامنة عند استعادة الاتصال
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.onReconnected(() {
+        loadBookings(providerId: _lastLoadedProviderId, force: true);
+      }),
+    );
   }
 
   // Getters
@@ -377,6 +409,21 @@ class BookingsProvider extends ChangeNotifier {
           'status': 'cancelled',
           'updated_at': nowIso,
         }).eq('id', requestId);
+
+        if (req != null && req.customerId != null) {
+          try {
+            await SupabaseConfig.client.from('notifications').insert({
+              'user_id': req.customerId,
+              'title': 'تم الاعتذار عن طلب الحجز',
+              'body': 'اعتذر مقدم الخدمة عن طلب الحجز رقم #${req.code}${reason != null && reason.isNotEmpty ? ': $reason' : ''}',
+              'type': 'booking_cancelled',
+              'related_booking_id': requestId,
+              'created_at': nowIso,
+            });
+          } catch (ne) {
+            debugPrint('Note: Notification insert error on reject: $ne');
+          }
+        }
       }
 
       // 2. تحديث الحالة محلياً فور نجاح الخادم
@@ -465,6 +512,38 @@ class BookingsProvider extends ChangeNotifier {
             'responded_at': nowIso,
           }).eq('booking_id', bookingId);
         }
+
+        final targetIndex = _confirmedBookings.indexWhere((b) => b.id == bookingId);
+        final target = targetIndex != -1 ? _confirmedBookings[targetIndex] : null;
+        if (target != null && target.customerId != null && target.customerId!.isNotEmpty) {
+          try {
+            String statusTitle = 'تحديث في حالة الحجز';
+            String statusDesc = 'تم تحديث حالة حجزك رقم #${target.bookingNumber} إلى ';
+            switch (status) {
+              case ConfirmedBookingStatus.inProgress:
+                statusDesc += 'قيد التنفيذ حالياً';
+                break;
+              case ConfirmedBookingStatus.completed:
+                statusTitle = 'اكتملت الخدمة بنجاح';
+                statusDesc += 'مكتمل بنجاح، شكراً لاختياركم خِدمتي';
+                break;
+              case ConfirmedBookingStatus.cancelled:
+                statusTitle = 'إلغاء الحجز';
+                statusDesc += 'ملغي';
+                break;
+              default:
+                statusDesc += 'مؤكد';
+            }
+            await SupabaseConfig.client.from('notifications').insert({
+              'user_id': target.customerId,
+              'title': statusTitle,
+              'body': statusDesc,
+              'type': 'booking_status_updated',
+              'related_booking_id': bookingId,
+              'created_at': nowIso,
+            });
+          } catch (_) {}
+        }
       }
 
       // تحديث الحالة محلياً
@@ -484,5 +563,14 @@ class BookingsProvider extends ChangeNotifier {
       _activeActionBookingId = null;
       notifyListeners();
     }
+  }
+
+  @override
+  void dispose() {
+    for (final token in _realtimeTokens) {
+      token.cancel();
+    }
+    _realtimeTokens.clear();
+    super.dispose();
   }
 }

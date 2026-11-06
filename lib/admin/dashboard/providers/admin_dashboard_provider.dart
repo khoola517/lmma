@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:khadematy_web/core/config/supabase_config.dart';
+import 'package:khadematy_web/core/services/supabase_realtime_service.dart';
 import 'package:khadematy_web/provider/auth/models/provider_application_model.dart';
 
 class AdminDashboardProvider extends ChangeNotifier {
@@ -31,6 +32,7 @@ class AdminDashboardProvider extends ChangeNotifier {
   final Set<String> _hiddenReviewIds = {};
   List<Map<String, dynamic>> _complaints = [];
   final List<Map<String, dynamic>> _broadcastNotifications = [];
+  final List<RealtimeSubscriptionToken> _realtimeTokens = [];
 
   // Settings
   double _commissionRate = 10.0; // 10%
@@ -100,6 +102,144 @@ class AdminDashboardProvider extends ChangeNotifier {
 
   AdminDashboardProvider() {
     loadAllAdminData();
+    _initRealtime();
+  }
+
+  void _initRealtime() {
+    // 1. مزامنة المستخدمين
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'profiles',
+        onInserted: (_) => _reloadUsersAndNotify(),
+        onUpdated: (_) => _reloadUsersAndNotify(),
+        onDeleted: (_) => _reloadUsersAndNotify(),
+      ),
+    );
+
+    // 2. مزامنة ملفات مزودي الخدمة
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'provider_profiles',
+        onInserted: (_) => _reloadProvidersAndNotify(),
+        onUpdated: (_) => _reloadProvidersAndNotify(),
+        onDeleted: (_) => _reloadProvidersAndNotify(),
+      ),
+    );
+
+    // 3. مزامنة طلبات انضمام المزودين
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'provider_applications',
+        onInserted: (_) => _reloadApplicationsAndNotify(),
+        onUpdated: (_) => _reloadApplicationsAndNotify(),
+        onDeleted: (_) => _reloadApplicationsAndNotify(),
+      ),
+    );
+
+    // 4. مزامنة التصنيفات
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'categories',
+        onInserted: (_) => _reloadCategoriesAndNotify(),
+        onUpdated: (_) => _reloadCategoriesAndNotify(),
+        onDeleted: (_) => _reloadCategoriesAndNotify(),
+      ),
+    );
+
+    // 5. مزامنة الخدمات
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'services',
+        onInserted: (_) => _reloadServicesAndNotify(),
+        onUpdated: (_) => _reloadServicesAndNotify(),
+        onDeleted: (_) => _reloadServicesAndNotify(),
+      ),
+    );
+
+    // 6. مزامنة الحجوزات وعناصرها
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'bookings',
+        onInserted: (_) => _reloadBookingsAndNotify(),
+        onUpdated: (_) => _reloadBookingsAndNotify(),
+        onDeleted: (_) => _reloadBookingsAndNotify(),
+      ),
+    );
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'booking_items',
+        onInserted: (_) => _reloadBookingsAndNotify(),
+        onUpdated: (_) => _reloadBookingsAndNotify(),
+        onDeleted: (_) => _reloadBookingsAndNotify(),
+      ),
+    );
+
+    // 7. مزامنة التقييمات
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'reviews',
+        onInserted: (_) => _reloadReviewsAndNotify(),
+        onUpdated: (_) => _reloadReviewsAndNotify(),
+        onDeleted: (_) => _reloadReviewsAndNotify(),
+      ),
+    );
+
+    // 8. مزامنة البلاغات والشكاوى
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'complaints',
+        onInserted: (_) => _reloadComplaintsAndNotify(),
+        onUpdated: (_) => _reloadComplaintsAndNotify(),
+        onDeleted: (_) => _reloadComplaintsAndNotify(),
+      ),
+    );
+
+    // 9. إعادة المزامنة الشاملة عند استعادة الاتصال بالإنترنت
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.onReconnected(() {
+        loadAllAdminData();
+      }),
+    );
+  }
+
+  Future<void> _reloadUsersAndNotify() async {
+    await _loadUsers();
+    notifyListeners();
+  }
+
+  Future<void> _reloadProvidersAndNotify() async {
+    await _loadProviders();
+    notifyListeners();
+  }
+
+  Future<void> _reloadApplicationsAndNotify() async {
+    await _loadApplications();
+    notifyListeners();
+  }
+
+  Future<void> _reloadCategoriesAndNotify() async {
+    await _loadCategories();
+    notifyListeners();
+  }
+
+  Future<void> _reloadServicesAndNotify() async {
+    await _loadServices();
+    notifyListeners();
+  }
+
+  Future<void> _reloadBookingsAndNotify() async {
+    await _loadBookings();
+    notifyListeners();
+  }
+
+  Future<void> _reloadReviewsAndNotify() async {
+    await _loadReviews();
+    notifyListeners();
+  }
+
+  Future<void> _reloadComplaintsAndNotify() async {
+    await _loadComplaints();
+    notifyListeners();
   }
 
   Future<void> loadAllAdminData() async {
@@ -779,21 +919,54 @@ class AdminDashboardProvider extends ChangeNotifier {
   }
 
   // Broadcast Notifications
-  void sendBroadcastNotification({
+  Future<void> sendBroadcastNotification({
     required String title,
     required String message,
     required String targetAudience, // 'all', 'providers', 'customers'
     required String type, // 'announcement', 'warning', 'info'
-  }) {
+  }) async {
+    final nowIso = DateTime.now().toIso8601String();
     _broadcastNotifications.insert(0, {
       'id': 'NOTIF-${DateTime.now().millisecondsSinceEpoch}',
       'title': title,
       'message': message,
       'target_audience': targetAudience,
       'type': type,
-      'created_at': DateTime.now().toIso8601String(),
+      'created_at': nowIso,
     });
     notifyListeners();
+
+    try {
+      var query = SupabaseConfig.client.from('profiles').select('id, role');
+      if (targetAudience == 'providers') {
+        query = query.eq('role', 'provider');
+      } else if (targetAudience == 'customers') {
+        query = query.eq('role', 'customer');
+      }
+      final users = await query;
+      final List<Map<String, dynamic>> notifs = [];
+      for (final u in users as List) {
+        final uid = u['id']?.toString();
+        if (uid != null && uid.isNotEmpty) {
+          notifs.add({
+            'user_id': uid,
+            'title': title,
+            'body': message,
+            'type': type,
+            'created_at': nowIso,
+          });
+        }
+      }
+      if (notifs.isNotEmpty) {
+        // Insert in chunks of 50 to avoid request size limits
+        for (var i = 0; i < notifs.length; i += 50) {
+          final end = (i + 50 < notifs.length) ? i + 50 : notifs.length;
+          await SupabaseConfig.client.from('notifications').insert(notifs.sublist(i, end));
+        }
+      }
+    } catch (e) {
+      debugPrint('Note: Error dispatching broadcast notifications to Supabase: $e');
+    }
   }
 
   // Update Settings
@@ -899,5 +1072,14 @@ class AdminDashboardProvider extends ChangeNotifier {
         'is_available': false,
       },
     ];
+  }
+
+  @override
+  void dispose() {
+    for (final token in _realtimeTokens) {
+      token.cancel();
+    }
+    _realtimeTokens.clear();
+    super.dispose();
   }
 }

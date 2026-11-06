@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:khadematy_web/core/config/supabase_config.dart';
+import 'package:khadematy_web/core/services/supabase_realtime_service.dart';
 import 'package:khadematy_web/provider/auth/models/provider_application_model.dart';
 import 'package:khadematy_web/provider/auth/models/user_profile_model.dart';
 
@@ -23,6 +24,8 @@ class AuthProvider extends ChangeNotifier {
   List<ProviderApplicationModel> _adminApplications = [];
   bool _isLoading = false;
   String? _errorMessage;
+  final List<RealtimeSubscriptionToken> _realtimeTokens = [];
+  String? _subscribedUserId;
 
   AuthStatus get status => _status;
   UserProfileModel? get userProfile => _userProfile;
@@ -75,6 +78,7 @@ class AuthProvider extends ChangeNotifier {
       SupabaseConfig.client.auth.onAuthStateChange.listen((data) {
         final session = data.session;
         if (session == null) {
+          _clearRealtimeSubscriptions();
           _status = AuthStatus.unauthenticated;
           _userProfile = null;
           _providerProfile = null;
@@ -238,6 +242,8 @@ class AuthProvider extends ChangeNotifier {
 
   /// التحقق من صلاحيات ودور الحساب وتحديد حالة التوجيه
   Future<void> _resolveUserRoleAndStatus(String userId) async {
+    _subscribeToUserRealtime(userId);
+
     // 1. جلب بيانات البروفايل من profiles
     final profileRes = await SupabaseConfig.client
         .from('profiles')
@@ -510,6 +516,7 @@ class AuthProvider extends ChangeNotifier {
 
   /// تسجيل الخروج
   Future<void> signOut() async {
+    _clearRealtimeSubscriptions();
     _isLoading = true;
     notifyListeners();
 
@@ -526,6 +533,69 @@ class AuthProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  void _subscribeToUserRealtime(String userId) {
+    if (_subscribedUserId == userId && _realtimeTokens.isNotEmpty) return;
+    _clearRealtimeSubscriptions();
+    _subscribedUserId = userId;
+
+    // 1. مراقبة طلبات المزود للمستخدم الحالي (قبول/رفض من لوحة الإدارة)
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'provider_applications',
+        filter: 'user_id=eq.$userId',
+        onUpdated: (_) => _handleUserStatusChange(userId),
+        onInserted: (_) => _handleUserStatusChange(userId),
+      ),
+    );
+
+    // 2. مراقبة الملف التعريفي للمزود
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'provider_profiles',
+        filter: 'user_id=eq.$userId',
+        onUpdated: (_) => _handleUserStatusChange(userId),
+        onInserted: (_) => _handleUserStatusChange(userId),
+      ),
+    );
+
+    // 3. مراقبة ملف المستخدم العام
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'profiles',
+        filter: 'id=eq.$userId',
+        onUpdated: (_) => _handleUserStatusChange(userId),
+      ),
+    );
+
+    // 4. إعادة التزامن عند عودة الاتصال
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.onReconnected(() {
+        if (_subscribedUserId != null) {
+          _handleUserStatusChange(_subscribedUserId!);
+        }
+      }),
+    );
+  }
+
+  void _handleUserStatusChange(String userId) async {
+    await _resolveUserRoleAndStatus(userId);
+    notifyListeners();
+  }
+
+  void _clearRealtimeSubscriptions() {
+    for (final token in _realtimeTokens) {
+      token.cancel();
+    }
+    _realtimeTokens.clear();
+    _subscribedUserId = null;
+  }
+
+  @override
+  void dispose() {
+    _clearRealtimeSubscriptions();
+    super.dispose();
   }
 
   String _mapAuthError(String message) {
