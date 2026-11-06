@@ -157,7 +157,7 @@ class DashboardScreen extends StatelessWidget {
             ],
           );
 
-          final buttonsSection = Wrap(
+          const buttonsSection = Wrap(
             spacing: 10,
             runSpacing: 8,
             children: [

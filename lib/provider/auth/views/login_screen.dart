@@ -277,7 +277,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // const SizedBox(height: 24),
 
             // Identifier
-            SizedBox(height: 20,),
+            const SizedBox(height: 20),
             Text(
               'اسم المستخدم أو البريد الإلكتروني',
               style: GoogleFonts.cairo(
@@ -295,14 +295,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontSize: 13,
                   color: const Color(0xFF8C7B83),
                 ),
-                suffixIcon: 
-                 const Icon(
-                    
-                         
-                        Icons.person_2_outlined,
-                    color: const Color(0xFF8C7B83),
-                    size: 20,
-                  ),
+                suffixIcon: const Icon(
+                  Icons.person_2_outlined,
+                  color: Color(0xFF8C7B83),
+                  size: 20,
+                ),
                 fillColor: const Color(0xFFFAF7F2),
                 filled: true,
                 contentPadding:

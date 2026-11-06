@@ -173,6 +173,14 @@ class AdminDashboardProvider extends ChangeNotifier {
         onDeleted: (_) => _reloadBookingsAndNotify(),
       ),
     );
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'booking_status_history',
+        onInserted: (_) => _reloadBookingsAndNotify(),
+        onUpdated: (_) => _reloadBookingsAndNotify(),
+        onDeleted: (_) => _reloadBookingsAndNotify(),
+      ),
+    );
 
     // 7. مزامنة التقييمات
     _realtimeTokens.add(
@@ -937,6 +945,21 @@ class AdminDashboardProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      try {
+        await SupabaseConfig.client.rpc(
+          'send_admin_broadcast_notification',
+          params: {
+            'p_title': title,
+            'p_body': message,
+            'p_type': type,
+            'p_target_audience': targetAudience,
+          },
+        );
+        return;
+      } catch (rpcErr) {
+        debugPrint('send_admin_broadcast_notification RPC note: $rpcErr');
+      }
+
       var query = SupabaseConfig.client.from('profiles').select('id, role');
       if (targetAudience == 'providers') {
         query = query.eq('role', 'provider');

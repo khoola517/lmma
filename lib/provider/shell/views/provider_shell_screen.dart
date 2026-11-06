@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/widgets/provider_sidebar.dart';
 import 'package:khadematy_web/core/widgets/provider_header.dart';
+import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
 import 'package:khadematy_web/provider/shell/providers/navigation_provider.dart';
 import 'package:khadematy_web/provider/services/providers/services_provider.dart';
 import 'package:khadematy_web/provider/bookings/providers/bookings_provider.dart';
@@ -29,9 +30,12 @@ class _ProviderShellScreenState extends State<ProviderShellScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      context.read<ProfileProvider>().loadProfile();
-      context.read<BookingsProvider>().loadBookings();
-      context.read<ReviewsProvider>().loadReviews();
+      final auth = context.read<AuthProvider>();
+      final provId = auth.currentProviderId;
+      context.read<ProfileProvider>().loadProfile(providerId: provId);
+      context.read<BookingsProvider>().loadBookings(providerId: provId);
+      context.read<ServicesProvider>().loadServices(providerId: provId);
+      context.read<ReviewsProvider>().loadReviews(providerId: provId);
     });
   }
 

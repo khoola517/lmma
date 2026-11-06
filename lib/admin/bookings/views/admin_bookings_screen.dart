@@ -846,8 +846,8 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
               borderRadius: BorderRadius.circular(16),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final tableWidth = constraints.maxWidth < 1050
-                      ? 1050.0
+                  final tableWidth = constraints.maxWidth < 950
+                      ? 950.0
                       : constraints.maxWidth;
 
                   return SingleChildScrollView(
@@ -962,29 +962,19 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
 
   Widget _buildTableRow(
       BuildContext context, Map<String, dynamic> b, int index) {
-    // 1. Booking Code & ID
-    final code = b['booking_code']?.toString() ?? 'KH-26-0000';
-    final id = b['id']?.toString() ?? '';
-    final shortId = id.length > 8
-        ? '#${id.substring(0, 8)}'
-        : (id.isNotEmpty ? '#$id' : '#${101 + index}');
-
     // 2. Customer
     final custMap = b['customer'] as Map<String, dynamic>?;
     final custName = custMap?['full_name'] as String? ?? 'عميل خِدمتي';
-    final custPhone = custMap?['phone'] as String? ?? '-';
     final initials = _getInitials(custName);
 
     // 3. Service & Event Information
     final eventType = b['event_type'] as String? ?? 'مناسبة خاصة';
-    final eventLocation = b['event_location'] as String? ?? 'غير محدد';
     final guestCount = b['guest_count'] as int?;
     final totalAmount = b['total_amount'] ?? b['budget'] ?? 0;
 
     String serviceName = eventType;
     String providerName = 'مؤسسة معتمدة';
     String providerCategory = 'خدمات المناسبات';
-    String providerAddress = eventLocation;
 
     if (b['booking_items'] is List && (b['booking_items'] as List).isNotEmpty) {
       final items = b['booking_items'] as List;
@@ -999,9 +989,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
         if (s['provider'] is Map) {
           final p = s['provider'] as Map<String, dynamic>;
           providerName = p['business_name'] as String? ?? providerName;
-          if (p['address'] != null && p['address'].toString().isNotEmpty) {
-            providerAddress = p['address'].toString();
-          }
         }
       }
       if (items.length > 1) {
@@ -1017,8 +1004,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
 
     // 5. Status
     final status = b['status']?.toString() ?? 'pending';
-
-    final isPrimaryRow = index == 0;
     final isEven = index % 2 == 0;
 
     return Container(
@@ -1253,7 +1238,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
               alignment: Alignment.center,
               child: ElevatedButton.icon(
                 onPressed: () => _showBookingDetailsModal(context, b),
-                icon: Icon(
+                icon: const Icon(
                   Icons.visibility_outlined,
                   size: 17,
                   color: AppColors.burgundy,

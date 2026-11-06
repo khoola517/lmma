@@ -264,7 +264,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Column(
       children: [
         // Storefront Icon with star
-        Stack(
+        const Stack(
           clipBehavior: Clip.none,
           children: [
             // Container(
@@ -454,8 +454,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           icon: Icons.alternate_email,
                         ),
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty)
+                          if (v == null || v.trim().isEmpty) {
                             return 'يرجى إدخال البريد';
+                          }
                           if (!v.contains('@')) return 'صيغة البريد غير صحيحة';
                           return null;
                         },
@@ -586,10 +587,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         ),
                         validator: (v) {
-                          if (v == null || v.isEmpty)
+                          if (v == null || v.isEmpty) {
                             return 'يرجى تأكيد كلمة المرور';
-                          if (v != _passwordController.text)
+                          }
+                          if (v != _passwordController.text) {
                             return 'كلمات المرور غير متطابقة';
+                          }
                           return null;
                         },
                       ),
@@ -668,9 +671,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               validator: (v) {
-                if (v == null || v.isEmpty) return 'يرجى تأكيد كلمة المرور';
-                if (v != _passwordController.text)
+                if (v == null || v.isEmpty) {
+                  return 'يرجى تأكيد كلمة المرور';
+                }
+                if (v != _passwordController.text) {
                   return 'كلمات المرور غير متطابقة';
+                }
                 return null;
               },
             ),

@@ -23,6 +23,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
   String _selectedService = 'all';
   DateTime? _selectedDate;
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _horizontalScrollController = ScrollController();
   int _currentPage = 1;
   static const int _itemsPerPage = 5;
 
@@ -39,6 +40,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _horizontalScrollController.dispose();
     super.dispose();
   }
 
@@ -729,73 +731,92 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: 1160,
-            child: Column(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const minTableWidth = 880.0;
+            final tableWidth = constraints.maxWidth < minTableWidth
+                ? minTableWidth
+                : constraints.maxWidth;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Table Header Row
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFFAF8F5),
-                    border: Border(
-                      bottom: BorderSide(color: Color(0xFFEBE6DF)),
+                // Scrollable Table Area
+                Scrollbar(
+                  controller: _horizontalScrollController,
+                  thumbVisibility: constraints.maxWidth < minTableWidth,
+                  child: SingleChildScrollView(
+                    controller: _horizontalScrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: tableWidth,
+                      child: Column(
+                        children: [
+                          // Table Header Row
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 14),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFFAF8F5),
+                              border: Border(
+                                bottom: BorderSide(color: Color(0xFFEBE6DF)),
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                _buildHeaderCell('العميل', flex: 21),
+                                _buildHeaderCell('الخدمة', flex: 21),
+                                _buildHeaderCell('تاريخ المناسبة', flex: 13),
+                                _buildHeaderCell('وقت المناسبة', flex: 12),
+                                _buildHeaderCell('المبلغ الإجمالي', flex: 11),
+                                _buildHeaderCell('حالة التنفيذ', flex: 10),
+                                _buildHeaderCell('الإجراءات',
+                                    flex: 12, textAlign: TextAlign.center),
+                              ],
+                            ),
+                          ),
+
+                          // Table Body Rows
+                          if (bookings.isEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 60),
+                              alignment: Alignment.center,
+                              child: Column(
+                                children: [
+                                  const Icon(Icons.event_busy_outlined,
+                                      size: 44, color: Color(0xFF9CA3AF)),
+                                  const SizedBox(height: 12),
+                                  Text(
+                                    'لا توجد حجوزات مؤكدة مطابقة للتصفية الحالية',
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF4B5563),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            ListView.separated(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
+                              itemCount: bookings.length,
+                              separatorBuilder: (_, __) => const Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: Color(0xFFF3EFEA),
+                              ),
+                              itemBuilder: (context, index) {
+                                final b = bookings[index];
+                                return _buildTableRow(context, b, provider);
+                              },
+                            ),
+                        ],
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      //_buildHeaderCell('رقم الحجز', flex: 14),
-                      _buildHeaderCell('العميل', flex: 22),
-                      _buildHeaderCell('الخدمة', flex: 22),
-                      _buildHeaderCell('تاريخ المناسبة', flex: 14),
-                      _buildHeaderCell('وقت المناسبة', flex: 14),
-                      _buildHeaderCell('المبلغ الإجمالي', flex: 13),
-                      _buildHeaderCell('حالة التنفيذ', flex: 12),
-                      _buildHeaderCell('الإجراءات',
-                          flex: 15, textAlign: TextAlign.center),
-                    ],
                   ),
                 ),
-
-                // Table Body Rows
-                if (bookings.isEmpty)
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 60),
-                    alignment: Alignment.center,
-                    child: Column(
-                      children: [
-                        const Icon(Icons.event_busy_outlined,
-                            size: 44, color: Color(0xFF9CA3AF)),
-                        const SizedBox(height: 12),
-                        Text(
-                          'لا توجد حجوزات مؤكدة مطابقة للتصفية الحالية',
-                          style: GoogleFonts.cairo(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: const Color(0xFF4B5563),
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: bookings.length,
-                    separatorBuilder: (_, __) => const Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Color(0xFFF3EFEA),
-                    ),
-                    itemBuilder: (context, index) {
-                      final b = bookings[index];
-                      return _buildTableRow(context, b, provider);
-                    },
-                  ),
 
                 // Table Footer / Pagination Bar (Matching screenshot)
                 Container(
@@ -918,8 +939,8 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
                   ),
                 ),
               ],
-            ),
-          ),
+            );
+          },
         ),
       ),
     );
@@ -932,6 +953,8 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
       child: Text(
         label,
         textAlign: textAlign,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
         style: GoogleFonts.cairo(
           fontSize: 12.5,
           fontWeight: FontWeight.w700,
@@ -992,22 +1015,9 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. رقم الحجز
-          // Expanded(
-          //   flex: 14,
-          //   child: Text(
-          //     b.bookingNumber,
-          //     style: GoogleFonts.cairo(
-          //       fontSize: 12.5,
-          //       fontWeight: FontWeight.w700,
-          //       color: const Color(0xFF374151),
-          //     ),
-          //   ),
-          // ),
-
-          // 2. العميل (Avatar + Name + Phone)
+          // 1. العميل (Avatar + Name + Phone)
           Expanded(
-            flex: 22,
+            flex: 21,
             child: Row(
               children: [
                 Container(
@@ -1049,6 +1059,8 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
                           fontSize: 11,
                           color: const Color(0xFF9CA3AF),
                         ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         textDirection: TextDirection.ltr,
                       ),
                     ],
@@ -1058,9 +1070,9 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
             ),
           ),
 
-          // 3. الخدمة
+          // 2. الخدمة
           Expanded(
-            flex: 22,
+            flex: 21,
             child: Text(
               b.serviceName,
               style: GoogleFonts.cairo(
@@ -1073,9 +1085,9 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
             ),
           ),
 
-          // 4. تاريخ المناسبة
+          // 3. تاريخ المناسبة
           Expanded(
-            flex: 14,
+            flex: 13,
             child: Text(
               _formatArabicDate(b.eventDate),
               style: GoogleFonts.cairo(
@@ -1083,12 +1095,14 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF4B5563),
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
 
-          // 5. وقت المناسبة
+          // 4. وقت المناسبة
           Expanded(
-            flex: 14,
+            flex: 12,
             child: Text(
               b.eventTime.isNotEmpty ? b.eventTime : 'مساءً',
               style: GoogleFonts.cairo(
@@ -1096,88 +1110,100 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
                 fontWeight: FontWeight.w500,
                 color: const Color(0xFF6B7280),
               ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
 
-          // 6. المبلغ الإجمالي
+          // 5. المبلغ الإجمالي
           Expanded(
-            flex: 13,
-            child: Text(
-              _formatCurrency(b.totalAmount),
-              style: GoogleFonts.cairo(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF111827),
+            flex: 11,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                _formatCurrency(b.totalAmount),
+                style: GoogleFonts.cairo(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  color: const Color(0xFF111827),
+                ),
               ),
             ),
           ),
 
-          // 7. حالة التنفيذ (Pill Badge matching screenshot)
+          // 6. حالة التنفيذ (Pill Badge)
           Expanded(
-            flex: 12,
+            flex: 10,
             child: Align(
               alignment: Alignment.centerRight,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(
-                  color: statusBg,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: statusBorder),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      width: 5,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: statusFg,
-                        shape: BoxShape.circle,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: statusBorder),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 5,
+                        height: 5,
+                        decoration: BoxDecoration(
+                          color: statusFg,
+                          shape: BoxShape.circle,
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      statusText,
-                      style: GoogleFonts.cairo(
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        color: statusFg,
+                      const SizedBox(width: 5),
+                      Text(
+                        statusText,
+                        style: GoogleFonts.cairo(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: statusFg,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
           ),
 
-          // 8. الإجراءات ("عرض التفاصيل" Pill Button matching screenshot)
+          // 7. الإجراءات ("عرض التفاصيل" Pill Button)
           Expanded(
-            flex: 15,
+            flex: 12,
             child: Center(
               child: InkWell(
                 onTap: () => _openDetails(context, b, provider),
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF681729).withOpacity(0.2),
-                        blurRadius: 6,
+                        color: const Color(0xFF681729).withOpacity(0.18),
+                        blurRadius: 5,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  child: Text(
-                    'عرض التفاصيل',
-                    style: GoogleFonts.cairo(
-                      color: Colors.white,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.bold,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Text(
+                      'عرض التفاصيل',
+                      style: GoogleFonts.cairo(
+                        color: Colors.white,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ),

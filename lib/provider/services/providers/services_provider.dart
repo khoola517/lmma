@@ -40,6 +40,24 @@ class ServicesProvider extends ChangeNotifier {
       ),
     );
 
+    // 3. الاستماع لتحديثات توفر الخدمات وصورها لحظياً
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'service_availability',
+        onInserted: (_) => loadServices(providerId: _lastLoadedProviderId, force: true),
+        onUpdated: (_) => loadServices(providerId: _lastLoadedProviderId, force: true),
+        onDeleted: (_) => loadServices(providerId: _lastLoadedProviderId, force: true),
+      ),
+    );
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'service_images',
+        onInserted: (_) => loadServices(providerId: _lastLoadedProviderId, force: true),
+        onUpdated: (_) => loadServices(providerId: _lastLoadedProviderId, force: true),
+        onDeleted: (_) => loadServices(providerId: _lastLoadedProviderId, force: true),
+      ),
+    );
+
     // 3. إعادة المزامنة عند استعادة الاتصال
     _realtimeTokens.add(
       SupabaseRealtimeService.instance.onReconnected(() {

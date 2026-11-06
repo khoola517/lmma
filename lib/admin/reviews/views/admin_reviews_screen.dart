@@ -878,12 +878,6 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
 
   Widget _buildTableRow(
       BuildContext context, Map<String, dynamic> r, int index, bool isHidden) {
-    // Review ID and Booking Ref
-    final revCode = 'REV-#${9842 - index}';
-    final bookingCode = r['booking_id'] != null
-        ? 'حجز: BK-${9812 - index}'
-        : 'حجز: BK-${9812 - index}';
-
     // Customer
     final cust = r['customer'] as Map<String, dynamic>?;
     final custName = cust?['full_name'] ?? 'سارة فهد العمودي';

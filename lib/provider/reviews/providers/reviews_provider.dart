@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:khadematy_web/core/config/supabase_config.dart';
+import 'package:khadematy_web/core/services/supabase_realtime_service.dart';
 import 'package:khadematy_web/provider/reviews/models/review_model.dart';
 
 enum ReviewReplyFilter { all, replied, pending }
@@ -19,7 +19,7 @@ class ReviewsProvider extends ChangeNotifier {
   String? _selectedServiceId;
   String _searchQuery = '';
 
-  RealtimeChannel? _realtimeChannel;
+  final List<RealtimeSubscriptionToken> _realtimeTokens = [];
 
   ReviewsProvider() {
     loadReviews();
@@ -321,20 +321,25 @@ class ReviewsProvider extends ChangeNotifier {
 
   /// اشتراك Realtime لمزامنة التقييمات الجديدة وتعديلاتها فوراً
   void _subscribeToRealtime() {
-    if (_realtimeChannel != null) return;
+    if (_realtimeTokens.isNotEmpty) return;
     try {
-      _realtimeChannel = SupabaseConfig.client
-          .channel('public:reviews')
-          .onPostgresChanges(
-            event: PostgresChangeEvent.all,
-            schema: 'public',
-            table: 'reviews',
-            callback: (payload) {
-              debugPrint('Realtime reviews update received: ${payload.eventType}');
-              loadReviews(providerId: _lastLoadedProviderId, force: true);
-            },
-          )
-          .subscribe();
+      _realtimeTokens.add(
+        SupabaseRealtimeService.instance.subscribeToReviews(
+          onData: (payload) {
+            debugPrint('Realtime reviews update received: ${payload.eventType}');
+            loadReviews(providerId: _lastLoadedProviderId, force: true);
+          },
+          onResync: () {
+            loadReviews(providerId: _lastLoadedProviderId, force: true);
+          },
+        ),
+      );
+
+      _realtimeTokens.add(
+        SupabaseRealtimeService.instance.onReconnected(() {
+          loadReviews(providerId: _lastLoadedProviderId, force: true);
+        }),
+      );
     } catch (e) {
       debugPrint('Realtime subscription error for reviews: $e');
     }
@@ -342,9 +347,10 @@ class ReviewsProvider extends ChangeNotifier {
 
   @override
   void dispose() {
-    if (_realtimeChannel != null) {
-      SupabaseConfig.client.removeChannel(_realtimeChannel!);
+    for (final token in _realtimeTokens) {
+      token.cancel();
     }
+    _realtimeTokens.clear();
     super.dispose();
   }
 }

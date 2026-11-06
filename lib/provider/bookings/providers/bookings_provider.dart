@@ -45,6 +45,16 @@ class BookingsProvider extends ChangeNotifier {
       ),
     );
 
+    // 3. الاستماع لتحديثات سجل حالات الحجز لحظياً
+    _realtimeTokens.add(
+      SupabaseRealtimeService.instance.subscribeTable(
+        table: 'booking_status_history',
+        onInserted: (_) => loadBookings(providerId: _lastLoadedProviderId, force: true),
+        onUpdated: (_) => loadBookings(providerId: _lastLoadedProviderId, force: true),
+        onDeleted: (_) => loadBookings(providerId: _lastLoadedProviderId, force: true),
+      ),
+    );
+
     // 3. إعادة المزامنة عند استعادة الاتصال
     _realtimeTokens.add(
       SupabaseRealtimeService.instance.onReconnected(() {

@@ -636,49 +636,49 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               margin: const EdgeInsets.only(bottom: 16),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               decoration: BoxDecoration(
-                //color: const Color(0xFFFEF3C7),
+                color: const Color(0xFFFEF3C7),
                 borderRadius: BorderRadius.circular(12),
-                //border: Border.all(color: const Color(0xFFFDE68A)),
+                border: Border.all(color: const Color(0xFFFDE68A)),
               ),
               child: Row(
                 children: [
-                  // const Icon(Icons.filter_alt_outlined,
-                  //     size: 18, color: Color(0xFFB45309)),
-                  // const SizedBox(width: 8),
-                  // Expanded(
-                  //   child: Text(
-                  //     'التصفية الحالية: '
-                  //     '${_selectedRole != 'all' ? 'الدور: $_selectedRole | ' : ''}'
-                  //     '${_selectedStatusFilter != 'all' ? 'الحالة: ${_selectedStatusFilter == 'active' ? 'نشط' : 'معطل'} | ' : ''}'
-                  //     '${globalSearch.isNotEmpty ? 'بحث: "$globalSearch"' : ''}',
-                  //     style: GoogleFonts.cairo(
-                  //       fontSize: 12.5,
-                  //       fontWeight: FontWeight.w600,
-                  //       color: const Color(0xFF92400E),
-                  //     ),
-                  //   ),
-                  // ),
-                  // TextButton.icon(
-                  //   onPressed: () {
-                  //     setState(() {
-                  //       _selectedRole = 'all';
-                  //       _selectedStatusFilter = 'all';
-                  //     });
-                  //     context
-                  //         .read<AdminNavigationProvider>()
-                  //         .setSearchQuery('');
-                  //   },
-                  //   icon: const Icon(Icons.clear_all,
-                  //       size: 16, color: Color(0xFFB45309)),
-                  //   label: Text(
-                  //     'إلغاء التصفية وعرض الكل',
-                  //     style: GoogleFonts.cairo(
-                  //       fontSize: 12,
-                  //       fontWeight: FontWeight.bold,
-                  //       color: const Color(0xFFB45309),
-                  //     ),
-                  //   ),
-                  // ),
+                  const Icon(Icons.filter_alt_outlined,
+                      size: 18, color: Color(0xFFB45309)),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'التصفية الحالية: '
+                      '${_selectedRole != 'all' ? 'الدور: $_selectedRole | ' : ''}'
+                      '${_selectedStatusFilter != 'all' ? 'الحالة: ${_selectedStatusFilter == 'active' ? 'نشط' : 'معطل'} | ' : ''}'
+                      '${globalSearch.isNotEmpty ? 'بحث: "$globalSearch"' : ''}',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF92400E),
+                      ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _selectedRole = 'all';
+                        _selectedStatusFilter = 'all';
+                      });
+                      context
+                          .read<AdminNavigationProvider>()
+                          .setSearchQuery('');
+                    },
+                    icon: const Icon(Icons.clear_all,
+                        size: 16, color: Color(0xFFB45309)),
+                    label: Text(
+                      'إلغاء التصفية وعرض الكل',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFFB45309),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -819,7 +819,6 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
   ) {
     final fullName = user['full_name'] as String? ?? 'مستخدم خِدمتي';
     final email = user['email'] as String? ?? '-';
-    final phone = user['phone'] as String? ?? '-';
     final role = user['role'] as String? ?? 'customer';
     final isActive = user['is_active'] != false;
     final userId = user['id'] as String? ?? '';
@@ -1174,7 +1173,7 @@ Expanded(
       ),
     ],
   ),
-)
+),
           ],
         ),
       ),

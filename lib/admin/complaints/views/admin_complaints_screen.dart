@@ -701,8 +701,9 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                         fontWeight: FontWeight.w600,
                         color: const Color(0xFF2E2527)),
                     onChanged: (val) {
-                      if (val != null)
+                      if (val != null) {
                         setState(() => _selectedStatusFilter = val);
+                      }
                     },
                     items: const [
                       DropdownMenuItem(

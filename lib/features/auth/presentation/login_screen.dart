@@ -294,7 +294,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   fontSize: 13,
                   color: const Color(0xFF8C7B83),
                 ),
-                suffixIcon: Icon(Icons.person_2_outlined),
+                suffixIcon: const Icon(Icons.person_2_outlined),
                 fillColor: const Color(0xFFFAF7F2),
                 filled: true,
                 contentPadding:
