@@ -380,6 +380,243 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
     );
   }
 
+  void _showAdminStatusChangeDialog(
+      BuildContext context, Map<String, dynamic> b) {
+    final bookingId = b['id'].toString();
+    final bookingCode =
+        b['booking_code']?.toString() ?? 'BK-${bookingId.substring(0, 5)}';
+    final currentStatus = b['status']?.toString().toLowerCase() ?? 'pending';
+
+    final custMap = b['customer'] as Map<String, dynamic>?;
+    final custName = custMap?['full_name'] as String? ?? 'عميل خِدمتي';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        actionsPadding: const EdgeInsets.all(16),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFBEAEA),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.published_with_changes_rounded,
+                color: Color(0xFF681729),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'تغيير حالة الحجز',
+                    style: GoogleFonts.cairo(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                  Text(
+                    '#$bookingCode للعميل $custName',
+                    style: GoogleFonts.cairo(
+                      fontSize: 12,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildAdminStatusOptionTile(
+                ctx: ctx,
+                bookingId: bookingId,
+                title: 'مؤكد (معتمد)',
+                subtitle: 'تأكيد الحجز واعتماده رسمياً',
+                icon: Icons.check_circle_outline_rounded,
+                targetStatus: 'confirmed',
+                color: const Color(0xFF2563EB),
+                isCurrent: currentStatus == 'confirmed' ||
+                    currentStatus == 'مؤكد' ||
+                    currentStatus == 'مؤكدة',
+              ),
+              const SizedBox(height: 8),
+              _buildAdminStatusOptionTile(
+                ctx: ctx,
+                bookingId: bookingId,
+                title: 'قيد التنفيذ (جاري العمل)',
+                subtitle: 'الخدمة قيد المعالجة والتنفيذ الميداني',
+                icon: Icons.timelapse_rounded,
+                targetStatus: 'in_progress',
+                color: const Color(0xFFD97706),
+                isCurrent: currentStatus == 'in_progress' ||
+                    currentStatus == 'inprogress' ||
+                    currentStatus == 'قيد التنفيذ',
+              ),
+              const SizedBox(height: 8),
+              _buildAdminStatusOptionTile(
+                ctx: ctx,
+                bookingId: bookingId,
+                title: 'مكتمل (تم التسليم)',
+                subtitle: 'إنجاز الخدمة وتسليمها بنجاح للعميل',
+                icon: Icons.task_alt_rounded,
+                targetStatus: 'completed',
+                color: const Color(0xFF059669),
+                isCurrent:
+                    currentStatus == 'completed' || currentStatus == 'مكتمل',
+              ),
+              const SizedBox(height: 8),
+              _buildAdminStatusOptionTile(
+                ctx: ctx,
+                bookingId: bookingId,
+                title: 'ملغي',
+                subtitle: 'إلغاء هذا الحجز وإيقاف العمل به',
+                icon: Icons.cancel_outlined,
+                targetStatus: 'cancelled',
+                color: const Color(0xFFDC2626),
+                isCurrent:
+                    currentStatus == 'cancelled' || currentStatus == 'ملغي',
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'إلغاء ',
+              style: GoogleFonts.cairo(
+                color: const Color(0xFF6B7280),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdminStatusOptionTile({
+    required BuildContext ctx,
+    required String bookingId,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required String targetStatus,
+    required Color color,
+    required bool isCurrent,
+  }) {
+    return InkWell(
+      onTap: isCurrent
+          ? null
+          : () async {
+              final adminProvider = ctx.read<AdminDashboardProvider>();
+              final messenger = ScaffoldMessenger.of(context);
+              Navigator.pop(ctx);
+              final ok = await adminProvider.updateBookingStatus(
+                  bookingId, targetStatus);
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(
+                    ok ? 'تم تحديث حالة الحجز بنجاح' : 'تعذر تحديث حالة الحجز',
+                    style: GoogleFonts.cairo(),
+                  ),
+                  backgroundColor: ok ? color : AppColors.error,
+                ),
+              );
+            },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isCurrent ? color.withOpacity(0.08) : const Color(0xFFFAF8F5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isCurrent ? color : const Color(0xFFEBE6DF),
+            width: isCurrent ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.cairo(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isCurrent ? color : const Color(0xFF1F2937),
+                        ),
+                      ),
+                      if (isCurrent) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'الحالية',
+                            style: GoogleFonts.cairo(
+                              fontSize: 9.5,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.cairo(
+                      fontSize: 10.5,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!isCurrent)
+              Icon(Icons.arrow_forward_ios_rounded, size: 13, color: color)
+            else
+              Icon(Icons.check_rounded, size: 18, color: color),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSectionHeader(String title, IconData icon) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -639,7 +876,7 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
             title: 'إدارة الحجوزات',
             subtitle:
                 'متابعة حجوزات العملاء ومقدمي الخدمات والطلبات ومعالجتها بدقة وسرعة فائقة لضمان موثوقية المنصة',
-            icon: Icons.calendar_month_outlined,
+          // icon: Icons.calendar_month_outlined,
           ),
 
           const SizedBox(height: 24),
@@ -868,14 +1105,13 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                             ),
                             child: Row(
                               children: [
-                                _buildTableHeader('رمز ومعرف الحجز', flex: 2),
                                 _buildTableHeader('العميل', flex: 3),
                                 _buildTableHeader('الخدمة والفعالية', flex: 4),
                                 _buildTableHeader('مقدم الخدمة', flex: 3),
                                 _buildTableHeader('موعد الفعالية', flex: 3),
                                 _buildTableHeader('المبلغ الإجمالي', flex: 2),
                                 _buildTableHeader('الحالة', flex: 2),
-                                _buildTableHeader('الإجراء',
+                                _buildTableHeader('الإجراءات',
                                     flex: 2, textAlign: TextAlign.center),
                               ],
                             ),
@@ -1231,44 +1467,63 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
             ),
           ),
 
-          // 8. الإجراء
+          // 8. الإجراءات (أيقونة التفاصيل لحالها + أيقونة تغيير الحالة لحالها)
           Expanded(
             flex: 2,
-            child: Align(
-              alignment: Alignment.center,
-              child: ElevatedButton.icon(
-                onPressed: () => _showBookingDetailsModal(context, b),
-                icon: const Icon(
-                  Icons.visibility_outlined,
-                  size: 17,
-                  color: AppColors.burgundy,
-                ),
-                label: Text(
-                  '',
-                  style: GoogleFonts.cairo(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 1. أيقونة التفاصيل لحالها
+                Tooltip(
+                  message: 'عرض تفاصيل الحجز',
+                  child: InkWell(
+                    onTap: () => _showBookingDetailsModal(context, b),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFBEAEA),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFF3D5D9)),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.visibility_outlined,
+                          size: 16,
+                          color: Color(0xFF681729),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-                style: ElevatedButton.styleFrom(
-                  elevation: 0,
-                  // backgroundColor: isPrimaryRow
-                  //     ? const Color(0xFF681729)
-                  //     : const Color(0xFFFAF8F5),
-                  // foregroundColor:
-                  //     isPrimaryRow ? Colors.white : const Color(0xFF681729),
-                  // side: BorderSide(
-                  //   color: isPrimaryRow
-                  //       ? Colors.transparent
-                  //       : const Color(0xFFEBE6DF),
-                  // ),
-                  // padding:
-                  //     const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  // shape: RoundedRectangleBorder(
-                  //   borderRadius: BorderRadius.circular(8),
-                  // ),
+                const SizedBox(width: 6),
+
+                // 2. أيقونة تغيير الحالة لحالها
+                Tooltip(
+                  message: 'تغيير حالة الحجز',
+                  child: InkWell(
+                    onTap: () => _showAdminStatusChangeDialog(context, b),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.published_with_changes_rounded,
+                          size: 16,
+                          color: Color(0xFF2563EB),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

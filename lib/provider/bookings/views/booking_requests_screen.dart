@@ -7,13 +7,32 @@ import 'package:khadematy_web/core/widgets/custom_card.dart';
 import 'package:khadematy_web/core/widgets/status_badge.dart';
 import 'package:khadematy_web/provider/bookings/models/booking_request_model.dart';
 import 'package:khadematy_web/provider/bookings/providers/bookings_provider.dart';
+import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
 import 'package:khadematy_web/provider/profile/providers/profile_provider.dart';
 import 'package:khadematy_web/provider/shell/views/provider_page_header_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_metric_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_stats_row.dart';
 
-class BookingRequestsScreen extends StatelessWidget {
+class BookingRequestsScreen extends StatefulWidget {
   const BookingRequestsScreen({super.key});
+
+  @override
+  State<BookingRequestsScreen> createState() => _BookingRequestsScreenState();
+}
+
+class _BookingRequestsScreenState extends State<BookingRequestsScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final auth = context.read<AuthProvider>();
+        context
+            .read<BookingsProvider>()
+            .loadBookings(providerId: auth.currentProviderId);
+      }
+    });
+  }
 
   void _confirmRejectRequest(
     BuildContext context,

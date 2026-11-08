@@ -8,6 +8,7 @@ import 'package:khadematy_web/provider/shell/views/provider_page_header_card.dar
 import 'package:khadematy_web/provider/shell/views/provider_metric_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_stats_row.dart';
 import 'package:khadematy_web/provider/bookings/providers/bookings_provider.dart';
+import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
 import 'booking_details_drawer.dart';
 
 class ConfirmedBookingsScreen extends StatefulWidget {
@@ -32,7 +33,8 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        context.read<BookingsProvider>().loadBookings();
+        final auth = context.read<AuthProvider>();
+        context.read<BookingsProvider>().loadBookings(providerId: auth.currentProviderId);
       }
     });
   }
@@ -226,6 +228,259 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
             },
           ),
         ],
+      ),
+    );
+  }
+
+  void _showStatusChangeDialog(
+    BuildContext context,
+    ConfirmedBookingModel booking,
+    BookingsProvider provider,
+  ) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        actionsPadding: const EdgeInsets.all(16),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFBEAEA),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(
+                Icons.published_with_changes_rounded,
+                color: Color(0xFF681729),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'تغيير حالة الحجز',
+                    style: GoogleFonts.cairo(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: const Color(0xFF1F2937),
+                    ),
+                  ),
+                  Text(
+                    '#${booking.bookingNumber} للعميل ${booking.customerName}',
+                    style: GoogleFonts.cairo(
+                      fontSize: 12,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildStatusOptionTile(
+                ctx: ctx,
+                title: 'مؤكد (بانتظار البدء)',
+                subtitle: 'الحجز معتمد وبانتظار بدء التجهيز والتنفيذ',
+                icon: Icons.check_circle_outline_rounded,
+                color: const Color(0xFF2563EB),
+                isCurrent: booking.status == ConfirmedBookingStatus.confirmed,
+                onTap: () => _updateStatusAndNotify(
+                    ctx, booking, ConfirmedBookingStatus.confirmed, provider),
+              ),
+              const SizedBox(height: 8),
+              _buildStatusOptionTile(
+                ctx: ctx,
+                title: 'قيد التنفيذ (جاري العمل)',
+                subtitle: 'الخدمة قيد التجهيز والمتابعة الميدانية حالياً',
+                icon: Icons.timelapse_rounded,
+                color: const Color(0xFFD97706),
+                isCurrent: booking.status == ConfirmedBookingStatus.inProgress,
+                onTap: () => _updateStatusAndNotify(
+                    ctx, booking, ConfirmedBookingStatus.inProgress, provider),
+              ),
+              const SizedBox(height: 8),
+              _buildStatusOptionTile(
+                ctx: ctx,
+                title: 'مكتمل (تم التسليم)',
+                subtitle: 'تم إنجاز وتسليم الخدمة بنجاح للعميل',
+                icon: Icons.task_alt_rounded,
+                color: const Color(0xFF059669),
+                isCurrent: booking.status == ConfirmedBookingStatus.completed,
+                onTap: () => _updateStatusAndNotify(
+                    ctx, booking, ConfirmedBookingStatus.completed, provider),
+              ),
+              const SizedBox(height: 8),
+              _buildStatusOptionTile(
+                ctx: ctx,
+                title: 'ملغي',
+                subtitle: 'إلغاء هذا الحجز وإيقاف العمل به',
+                icon: Icons.cancel_outlined,
+                color: const Color(0xFFDC2626),
+                isCurrent: booking.status == ConfirmedBookingStatus.cancelled,
+                onTap: () => _updateStatusAndNotify(
+                    ctx, booking, ConfirmedBookingStatus.cancelled, provider),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'إلغاء وتراجع',
+              style: GoogleFonts.cairo(
+                color: const Color(0xFF6B7280),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusOptionTile({
+    required BuildContext ctx,
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isCurrent,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: isCurrent ? null : onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isCurrent ? color.withOpacity(0.08) : const Color(0xFFFAF8F5),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isCurrent ? color : const Color(0xFFEBE6DF),
+            width: isCurrent ? 1.5 : 1.0,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        title,
+                        style: GoogleFonts.cairo(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: isCurrent ? color : const Color(0xFF1F2937),
+                        ),
+                      ),
+                      if (isCurrent) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'الحالية',
+                            style: GoogleFonts.cairo(
+                              fontSize: 9.5,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.cairo(
+                      fontSize: 10.5,
+                      color: const Color(0xFF6B7280),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (!isCurrent)
+              Icon(Icons.arrow_forward_ios_rounded, size: 13, color: color)
+            else
+              Icon(Icons.check_rounded, size: 18, color: color),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _updateStatusAndNotify(
+    BuildContext ctx,
+    ConfirmedBookingModel booking,
+    ConfirmedBookingStatus newStatus,
+    BookingsProvider provider,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.pop(ctx);
+    final success = await provider.updateBookingStatus(booking.id, newStatus);
+    if (!mounted) return;
+
+    String statusName;
+    Color snackColor;
+    switch (newStatus) {
+      case ConfirmedBookingStatus.inProgress:
+        statusName = 'قيد التنفيذ';
+        snackColor = const Color(0xFFD97706);
+        break;
+      case ConfirmedBookingStatus.completed:
+        statusName = 'مكتمل بنجاح';
+        snackColor = const Color(0xFF059669);
+        break;
+      case ConfirmedBookingStatus.cancelled:
+        statusName = 'ملغي';
+        snackColor = const Color(0xFFDC2626);
+        break;
+      case ConfirmedBookingStatus.confirmed:
+      default:
+        statusName = 'مؤكد';
+        snackColor = const Color(0xFF2563EB);
+        break;
+    }
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          success
+              ? 'تم تحديث حالة الحجز #${booking.bookingNumber} إلى "$statusName" بنجاح'
+              : 'تعذر تحديث حالة الحجز في الوقت الحالي',
+          style: GoogleFonts.cairo(),
+        ),
+        backgroundColor: success ? snackColor : AppColors.error,
       ),
     );
   }
@@ -733,7 +988,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
         borderRadius: BorderRadius.circular(16),
         child: LayoutBuilder(
           builder: (context, constraints) {
-            const minTableWidth = 880.0;
+            const minTableWidth = 920.0;
             final tableWidth = constraints.maxWidth < minTableWidth
                 ? minTableWidth
                 : constraints.maxWidth;
@@ -764,14 +1019,14 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
                             ),
                             child: Row(
                               children: [
-                                _buildHeaderCell('العميل', flex: 21),
-                                _buildHeaderCell('الخدمة', flex: 21),
+                                _buildHeaderCell('العميل', flex: 20),
+                                _buildHeaderCell('الخدمة', flex: 20),
                                 _buildHeaderCell('تاريخ المناسبة', flex: 13),
-                                _buildHeaderCell('وقت المناسبة', flex: 12),
+                                _buildHeaderCell('وقت المناسبة', flex: 11),
                                 _buildHeaderCell('المبلغ الإجمالي', flex: 11),
-                                _buildHeaderCell('حالة التنفيذ', flex: 10),
+                                _buildHeaderCell('حالة التنفيذ', flex: 11),
                                 _buildHeaderCell('الإجراءات',
-                                    flex: 12, textAlign: TextAlign.center),
+                                    flex: 14, textAlign: TextAlign.center),
                               ],
                             ),
                           ),
@@ -1017,7 +1272,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
         children: [
           // 1. العميل (Avatar + Name + Phone)
           Expanded(
-            flex: 21,
+            flex: 20,
             child: Row(
               children: [
                 Container(
@@ -1072,7 +1327,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
 
           // 2. الخدمة
           Expanded(
-            flex: 21,
+            flex: 20,
             child: Text(
               b.serviceName,
               style: GoogleFonts.cairo(
@@ -1102,7 +1357,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
 
           // 4. وقت المناسبة
           Expanded(
-            flex: 12,
+            flex: 11,
             child: Text(
               b.eventTime.isNotEmpty ? b.eventTime : 'مساءً',
               style: GoogleFonts.cairo(
@@ -1134,7 +1389,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
 
           // 6. حالة التنفيذ (Pill Badge)
           Expanded(
-            flex: 10,
+            flex: 11,
             child: Align(
               alignment: Alignment.centerRight,
               child: FittedBox(
@@ -1174,40 +1429,63 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
             ),
           ),
 
-          // 7. الإجراءات ("عرض التفاصيل" Pill Button)
+          // 7. الإجراءات (أيقونة التفاصيل لحالها + أيقونة تغيير الحالة لحالها)
           Expanded(
-            flex: 12,
-            child: Center(
-              child: InkWell(
-                onTap: () => _openDetails(context, b, provider),
-                borderRadius: BorderRadius.circular(20),
-                child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color(0xFF681729).withOpacity(0.18),
-                        blurRadius: 5,
-                        offset: const Offset(0, 2),
+            flex: 14,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 1. أيقونة التفاصيل لحالها
+                Tooltip(
+                  message: 'عرض تفاصيل الحجز',
+                  child: InkWell(
+                    onTap: () => _openDetails(context, b, provider),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFBEAEA),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFF3D5D9)),
                       ),
-                    ],
-                  ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      'عرض التفاصيل',
-                      style: GoogleFonts.cairo(
-                        color: Colors.white,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
+                      child: const Center(
+                        child: Icon(
+                          Icons.visibility_outlined,
+                          size: 17,
+                          color: Color(0xFF681729),
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+                const SizedBox(width: 8),
+
+                // 2. أيقونة تغيير الحالة لحالها
+                Tooltip(
+                  message: 'تغيير حالة الحجز',
+                  child: InkWell(
+                    onTap: () => _showStatusChangeDialog(context, b, provider),
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEFF6FF),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFFBFDBFE)),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.published_with_changes_rounded,
+                          size: 17,
+                          color: Color(0xFF2563EB),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

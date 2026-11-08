@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/supabase_config.dart';
+import 'core/services/fcm_service.dart';
 import 'provider/auth/providers/auth_provider.dart';
 import 'provider/shell/providers/navigation_provider.dart';
 import 'provider/services/providers/services_provider.dart';
@@ -25,6 +26,12 @@ Future<void> main() async {
     await SupabaseConfig.initialize();
   } catch (e) {
     debugPrint('Supabase Initialization Note: $e');
+  }
+
+  try {
+    await FcmService.instance.initialize();
+  } catch (e) {
+    debugPrint('FCM Web Initialization Note: $e');
   }
 
   runApp(const KhadematyProviderApp());

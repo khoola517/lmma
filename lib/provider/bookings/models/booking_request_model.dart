@@ -58,9 +58,13 @@ class BookingRequestModel {
 
     final items = (json['booking_items'] as List?) ?? [];
     final relevantItems = targetProviderId != null
-        ? items.where((i) => i['services']?['provider_id'] == targetProviderId).toList()
+        ? items
+            .where((i) => i['services']?['provider_id'] == targetProviderId)
+            .toList()
         : items;
-    final itemsToUse = relevantItems.isNotEmpty ? relevantItems : items;
+    final itemsToUse = (targetProviderId != null && relevantItems.isNotEmpty)
+        ? relevantItems
+        : (targetProviderId == null ? items : <dynamic>[]);
 
     String serviceName = itemsToUse
         .map((i) => i['services']?['name']?.toString())
@@ -79,12 +83,20 @@ class BookingRequestModel {
       location = firstServiceLoc ?? 'صنعاء';
     }
 
-    final double budget = (json['budget'] as num?)?.toDouble() ??
-        (json['total_amount'] as num?)?.toDouble() ??
-        itemsToUse.fold<double>(
-          0.0,
-          (sum, i) => sum + ((i['subtotal'] as num?)?.toDouble() ?? 0.0),
-        );
+    final double budget = (targetProviderId != null && relevantItems.isNotEmpty)
+        ? relevantItems.fold<double>(
+            0.0,
+            (sum, i) =>
+                sum +
+                ((i['subtotal'] as num?)?.toDouble() ??
+                    ((i['unit_price'] as num?)?.toDouble() ?? 0.0)),
+          )
+        : ((json['budget'] as num?)?.toDouble() ??
+            (json['total_amount'] as num?)?.toDouble() ??
+            itemsToUse.fold<double>(
+              0.0,
+              (sum, i) => sum + ((i['subtotal'] as num?)?.toDouble() ?? 0.0),
+            ));
 
     final rawCode = json['booking_code']?.toString() ??
         'BK-${json['id'].toString().substring(0, 4)}';

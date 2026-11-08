@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:khadematy_web/core/config/supabase_config.dart';
 import 'package:khadematy_web/core/services/supabase_realtime_service.dart';
+import 'package:khadematy_web/core/services/fcm_service.dart';
 import 'package:khadematy_web/provider/auth/models/provider_application_model.dart';
 import 'package:khadematy_web/provider/auth/models/user_profile_model.dart';
 
@@ -519,6 +520,13 @@ class AuthProvider extends ChangeNotifier {
     _clearRealtimeSubscriptions();
     _isLoading = true;
     notifyListeners();
+
+    try {
+      // إلغاء ربط توكن الويب من Supabase قبل إنهاء الجلسة
+      await FcmService.instance.unregisterToken();
+    } catch (e) {
+      debugPrint('FCM Web unregister note: $e');
+    }
 
     try {
       await SupabaseConfig.client.auth.signOut();

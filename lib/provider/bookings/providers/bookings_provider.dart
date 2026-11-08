@@ -19,8 +19,6 @@ class BookingsProvider extends ChangeNotifier {
   final List<RealtimeSubscriptionToken> _realtimeTokens = [];
 
   BookingsProvider() {
-    // Initial load from Supabase or fallback
-    loadBookings();
     _initRealtime();
   }
 
@@ -158,7 +156,7 @@ class BookingsProvider extends ChangeNotifier {
 
     try {
       // 1. تحديد معرّف المزود المستهدف
-      String? resolvedProviderId = providerId;
+      String? resolvedProviderId = providerId ?? _lastLoadedProviderId;
       if (resolvedProviderId == null || resolvedProviderId.isEmpty) {
         final user = SupabaseConfig.client.auth.currentUser;
         if (user != null) {
@@ -175,20 +173,6 @@ class BookingsProvider extends ChangeNotifier {
             debugPrint('Note: Error fetching provider profile for user: $e');
           }
         }
-      }
-
-      // إذا لم يتوفر ملف للمستخدم (مثلاً أثناء المعاينة أو اختبار الأدمن) نأخذ أول مزود متاح للعرض
-      if (resolvedProviderId == null || resolvedProviderId.isEmpty) {
-        try {
-          final firstProv = await SupabaseConfig.client
-              .from('provider_profiles')
-              .select('id')
-              .limit(1)
-              .maybeSingle();
-          if (firstProv != null) {
-            resolvedProviderId = firstProv['id'] as String?;
-          }
-        } catch (_) {}
       }
 
       _lastLoadedProviderId = resolvedProviderId;
@@ -237,25 +221,18 @@ class BookingsProvider extends ChangeNotifier {
 
       final rawList = List<Map<String, dynamic>>.from(response as List);
 
-      // 3. تصفية الحجوزات الخاصة بهذا المزود
-      List<Map<String, dynamic>> providerBookings = rawList;
+      // 3. تصفية الحجوزات بدقة متناهية حسب مزود الخدمة
+      List<Map<String, dynamic>> providerBookings = [];
       if (resolvedProviderId != null && resolvedProviderId.isNotEmpty) {
-        final filtered = rawList.where((raw) {
+        providerBookings = rawList.where((raw) {
           final items = (raw['booking_items'] as List?) ?? [];
           return items.any((bi) {
             final service = bi['services'] as Map<String, dynamic>?;
             return service?['provider_id'] == resolvedProviderId;
           });
         }).toList();
-
-        // إذا كان لدى المزود حجوزات نعتمدها، وإذا لم تكن لديه أي حجوزات بعد
-        // يمكن إبقاء القائمة كما هي أو استخدام كامل الحجوزات في حالة التجربة
-        if (filtered.isNotEmpty) {
-          providerBookings = filtered;
-        } else if (rawList.isNotEmpty) {
-          // في حال عدم وجود حجوزات خاصة بالمزود الحالي بعد، نعرض الحجوزات المتاحة لتجربة الواجهة
-          providerBookings = rawList;
-        }
+      } else {
+        providerBookings = rawList;
       }
 
       final List<BookingRequestModel> requests = [];
@@ -280,8 +257,8 @@ class BookingsProvider extends ChangeNotifier {
       debugPrint('Error loading bookings from Supabase: $e');
       _errorMessage = 'تعذر الاتصال بـ Supabase لجلب الحجوزات: $e';
 
-      // Fallback إلى البيانات المبدئية عند فشل الاتصال فقط
-      if (_bookingRequests.isEmpty && _confirmedBookings.isEmpty) {
+      // Fallback إلى البيانات المبدئية فقط عند عدم الاتصال بالسيرفر إطلاقاً
+      if (!SupabaseConfig.hasClient && _bookingRequests.isEmpty && _confirmedBookings.isEmpty) {
         _bookingRequests = List.from(ProviderMockData.initialBookingRequests);
         _confirmedBookings = List.from(ProviderMockData.initialConfirmedBookings);
       }
