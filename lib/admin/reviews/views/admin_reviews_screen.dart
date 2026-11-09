@@ -19,6 +19,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
   String _statusFilter = 'all'; // 'all', 'visible', 'hidden'
   String _dateFilter = 'all'; // 'all', 'this_month', 'this_week'
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _horizontalScrollController = ScrollController();
 
   @override
   void initState() {
@@ -33,6 +34,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _horizontalScrollController.dispose();
     super.dispose();
   }
 
@@ -394,6 +396,80 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
     );
   }
 
+  void _confirmDeleteReview(
+      BuildContext context, String reviewId, String customerName) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white,
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFEF2F2),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.delete_outline_rounded,
+                  color: Color(0xFFDC2626), size: 22),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              'تأكيد حذف التقييم',
+              style: GoogleFonts.cairo(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: const Color(0xFF1F2937),
+              ),
+            ),
+          ],
+        ),
+        content: Text(
+          'هل أنت متأكد من رغبتك في حذف تقييم العميل "$customerName" نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
+          style: GoogleFonts.cairo(
+              fontSize: 13, color: const Color(0xFF6B7280)),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'تراجع',
+              style: GoogleFonts.cairo(color: const Color(0xFF6B7280)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final ok = await context
+                  .read<AdminDashboardProvider>()
+                  .deleteReview(reviewId);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      ok ? 'تم حذف التقييم بنجاح' : 'فشل حذف التقييم',
+                      style: GoogleFonts.cairo(),
+                    ),
+                    backgroundColor: ok ? AppColors.success : AppColors.error,
+                  ),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFDC2626),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8)),
+            ),
+            child: Text('تأكيد الحذف',
+                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildInfoRow(String label, String value) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -741,87 +817,110 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Column(
-                children: [
-                  // Table Header Row
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFFFAF8F5),
-                      border: Border(
-                        bottom: BorderSide(color: Color(0xFFEBE6DF)),
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        _buildTableHeader('رقم التقييم', flex: 2),
-                        _buildTableHeader('اسم العميل', flex: 3),
-                        _buildTableHeader('اسم الخدمة', flex: 3),
-                        _buildTableHeader('اسم مقدم الخدمة', flex: 3),
-                        _buildTableHeader('عدد النجوم', flex: 2),
-                        _buildTableHeader('التعليق', flex: 5),
-                        _buildTableHeader('تاريخ التقييم', flex: 2),
-                        _buildTableHeader('الحالة', flex: 2),
-                        _buildTableHeader('الإجراء',
-                            flex: 2, textAlign: TextAlign.center),
-                      ],
-                    ),
-                  ),
-
-                  // Data Rows or Loading/Empty State
-                  if (adminData.isLoading && adminData.reviews.isEmpty)
-                    const Padding(
-                      padding: EdgeInsets.all(60),
-                      child: Center(
-                        child:
-                            CircularProgressIndicator(color: Color(0xFF681729)),
-                      ),
-                    )
-                  else if (filteredReviews.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.all(60),
-                      child: Center(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final tableWidth = constraints.maxWidth < 980
+                      ? 980.0
+                      : constraints.maxWidth;
+                  return Scrollbar(
+                    controller: _horizontalScrollController,
+                    thumbVisibility: constraints.maxWidth < 980,
+                    trackVisibility: constraints.maxWidth < 980,
+                    interactive: true,
+                    thickness: 7,
+                    radius: const Radius.circular(4),
+                    child: SingleChildScrollView(
+                      controller: _horizontalScrollController,
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      child: SizedBox(
+                        width: tableWidth,
                         child: Column(
                           children: [
-                            const Icon(Icons.star_border_rounded,
-                                size: 48, color: Color(0xFFB0A4A7)),
-                            const SizedBox(height: 12),
-                            Text(
-                              'لا توجد تقييمات مطابقة للفلاتر المحددة',
-                              style: GoogleFonts.cairo(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: const Color(0xFF2D2327),
+                            // Table Header Row
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              decoration: const BoxDecoration(
+                                color: Color(0xFFFAF8F5),
+                                border: Border(
+                                  bottom: BorderSide(color: Color(0xFFEBE6DF)),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  _buildTableHeader('اسم العميل', flex: 15),
+                                  _buildTableHeader('اسم الخدمة', flex: 14),
+                                  _buildTableHeader('اسم مقدم الخدمة', flex: 14),
+                                  _buildTableHeader('عدد النجوم', flex: 10),
+                                  _buildTableHeader('التعليق', flex: 18),
+                                  _buildTableHeader('تاريخ التقييم', flex: 9),
+                                  _buildTableHeader('الحالة', flex: 9),
+                                  _buildTableHeader('الإجراءات',
+                                      flex: 11, textAlign: TextAlign.center),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              'جرب تغيير تصفية النجوم أو الحالة للاطلاع على التقييمات المسجلة.',
-                              style: GoogleFonts.cairo(
-                                fontSize: 13,
-                                color: const Color(0xFF8C7B83),
+
+                            // Data Rows or Loading/Empty State
+                            if (adminData.isLoading && adminData.reviews.isEmpty)
+                              const Padding(
+                                padding: EdgeInsets.all(60),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                      color: Color(0xFF681729)),
+                                ),
+                              )
+                            else if (filteredReviews.isEmpty)
+                              Padding(
+                                padding: const EdgeInsets.all(60),
+                                child: Center(
+                                  child: Column(
+                                    children: [
+                                      const Icon(Icons.star_border_rounded,
+                                          size: 48, color: Color(0xFFB0A4A7)),
+                                      const SizedBox(height: 12),
+                                      Text(
+                                        'لا توجد تقييمات مطابقة للفلاتر المحددة',
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: const Color(0xFF2D2327),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        'جرب تغيير تصفية النجوم أو الحالة للاطلاع على التقييمات المسجلة.',
+                                        style: GoogleFonts.cairo(
+                                          fontSize: 13,
+                                          color: const Color(0xFF8C7B83),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )
+                            else
+                              ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: filteredReviews.length,
+                                separatorBuilder: (_, __) => const Divider(
+                                    height: 1, color: Color(0xFFEBE6DF)),
+                                itemBuilder: (context, index) {
+                                  final r = filteredReviews[index];
+                                  final isHidden = adminData
+                                      .isReviewHidden(r['id'].toString());
+                                  return _buildTableRow(
+                                      context, r, index, isHidden);
+                                },
                               ),
-                            ),
                           ],
                         ),
                       ),
-                    )
-                  else
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: filteredReviews.length,
-                      separatorBuilder: (_, __) =>
-                          const Divider(height: 1, color: Color(0xFFEBE6DF)),
-                      itemBuilder: (context, index) {
-                        final r = filteredReviews[index];
-                        final isHidden =
-                            adminData.isReviewHidden(r['id'].toString());
-                        return _buildTableRow(context, r, index, isHidden);
-                      },
                     ),
-                ],
+                  );
+                },
               ),
             ),
           ),
@@ -906,40 +1005,14 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
     final date = _formatArabicDate(r['created_at']?.toString());
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       color: isHidden ? const Color(0xFFFAFAFA) : Colors.white,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // 1. رقم التقييم
-          // Expanded(
-          //   flex: 2,
-          //   child: Column(
-          //     crossAxisAlignment: CrossAxisAlignment.start,
-          //     mainAxisSize: MainAxisSize.min,
-          //     children: [
-          //       Text(
-          //         revCode,
-          //         style: GoogleFonts.cairo(
-          //           fontSize: 13,
-          //           fontWeight: FontWeight.w800,
-          //           color: const Color(0xFF2D2327),
-          //         ),
-          //       ),
-          //       Text(
-          //         bookingCode,
-          //         style: GoogleFonts.cairo(
-          //           fontSize: 11,
-          //           color: const Color(0xFF8C7B83),
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
-
-          // 2. اسم العميل
+          // 1. اسم العميل
           Expanded(
-            flex: 3,
+            flex: 15,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -947,7 +1020,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
                 Text(
                   custName,
                   style: GoogleFonts.cairo(
-                    fontSize: 13,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF2D2327),
                   ),
@@ -957,7 +1030,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
                 Text(
                   custPhone,
                   style: GoogleFonts.cairo(
-                    fontSize: 11,
+                    fontSize: 10.5,
                     color: const Color(0xFF8C7B83),
                   ),
                   maxLines: 1,
@@ -967,9 +1040,9 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
             ),
           ),
 
-          // 3. اسم الخدمة (مع بادج التصنيف)
+          // 2. اسم الخدمة (مع بادج التصنيف)
           Expanded(
-            flex: 3,
+            flex: 14,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -977,17 +1050,17 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
                 Text(
                   srvName,
                   style: GoogleFonts.cairo(
-                    fontSize: 13,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF2D2327),
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Container(
                   padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFEF9EE),
                     borderRadius: BorderRadius.circular(4),
@@ -996,7 +1069,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
                   child: Text(
                     srvCategory,
                     style: GoogleFonts.cairo(
-                      fontSize: 10,
+                      fontSize: 9.5,
                       fontWeight: FontWeight.w700,
                       color: const Color(0xFF8A5B00),
                     ),
@@ -1006,13 +1079,13 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
             ),
           ),
 
-          // 4. اسم مقدم الخدمة
+          // 3. اسم مقدم الخدمة
           Expanded(
-            flex: 3,
+            flex: 14,
             child: Text(
               provName,
               style: GoogleFonts.cairo(
-                fontSize: 13,
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: const Color(0xFF2D2327),
               ),
@@ -1021,9 +1094,9 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
             ),
           ),
 
-          // 5. عدد النجوم
+          // 4. عدد النجوم
           Expanded(
-            flex: 2,
+            flex: 10,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -1036,15 +1109,15 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
                           ? Icons.star_rounded
                           : Icons.star_border_rounded,
                       color: const Color(0xFFF59E0B),
-                      size: 15,
+                      size: 13.5,
                     );
                   }),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 1),
                 Text(
                   '${rating.toStringAsFixed(1)} / 5.0',
                   style: GoogleFonts.cairo(
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: const Color(0xFF8C7B83),
                   ),
@@ -1053,88 +1126,160 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
             ),
           ),
 
-          // 6. التعليق
+          // 5. التعليق
           Expanded(
-            flex: 5,
-            child: Text(
-              comment,
-              style: GoogleFonts.cairo(
-                fontSize: 12,
-                color: const Color(0xFF4A3E44),
-                height: 1.5,
+            flex: 18,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 6),
+              child: Text(
+                comment,
+                style: GoogleFonts.cairo(
+                  fontSize: 11.5,
+                  color: const Color(0xFF4A3E44),
+                  height: 1.4,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 2,
+            ),
+          ),
+
+          // 6. تاريخ التقييم
+          Expanded(
+            flex: 9,
+            child: Text(
+              date,
+              style: GoogleFonts.cairo(
+                fontSize: 11,
+                color: const Color(0xFF6E6367),
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
 
-          // 7. تاريخ التقييم
+          // 7. الحالة
           Expanded(
-            flex: 2,
-            child: Text(
-              date,
-              style: GoogleFonts.cairo(
-                fontSize: 12,
-                color: const Color(0xFF6E6367),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-
-          // 8. الحالة
-          Expanded(
-            flex: 2,
+            flex: 9,
             child: Align(
               alignment: Alignment.centerRight,
               child: _buildStatusBadge(isHidden),
             ),
           ),
 
-          // 9. الإجراء
+          // 8. الإجراءات (ظاهرة ومحاذاة بالكامل)
           Expanded(
-            flex: 2,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // Quick Toggle Visibility Button
-                IconButton(
-                  icon: Icon(
-                    isHidden
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    size: 18,
-                    color: isHidden
-                        ? const Color(0xFF16A34A)
-                        : const Color(0xFF8C7B83),
-                  ),
-                  tooltip: isHidden ? 'إظهار التقييم' : 'إخفاء التقييم',
-                  onPressed: () {
-                    context
-                        .read<AdminDashboardProvider>()
-                        .toggleReviewVisibility(r['id'].toString());
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          isHidden
-                              ? 'تم إظهار التقييم بنجاح'
-                              : 'تم إخفاء التقييم',
-                          style: GoogleFonts.cairo(),
+            flex: 11,
+            child: Center(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 1. Details Button
+                    Tooltip(
+                      message: 'عرض تفاصيل التقييم بالكامل',
+                      child: InkWell(
+                        onTap: () =>
+                            _showReviewDetailsModal(context, r, isHidden),
+                        borderRadius: BorderRadius.circular(7),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFBEAEA),
+                            borderRadius: BorderRadius.circular(7),
+                            border: Border.all(color: const Color(0xFFF3D5D9)),
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.visibility_outlined,
+                                size: 15, color: Color(0xFF681729)),
+                          ),
                         ),
-                        backgroundColor: AppColors.success,
                       ),
-                    );
-                  },
-                ),
+                    ),
+                    const SizedBox(width: 4),
 
-                // Details Button
-                IconButton(
-                  icon: const Icon(Icons.info_outline_rounded,
-                      size: 18, color: Color(0xFF681729)),
-                  tooltip: 'عرض تفاصيل التقييم',
-                  onPressed: () =>
-                      _showReviewDetailsModal(context, r, isHidden),
+                    // 2. Quick Toggle Visibility Button
+                    Tooltip(
+                      message: isHidden
+                          ? 'إظهار التقييم للمستخدمين'
+                          : 'إخفاء التقييم عن المنصة',
+                      child: InkWell(
+                        onTap: () {
+                          context
+                              .read<AdminDashboardProvider>()
+                              .toggleReviewVisibility(r['id'].toString());
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                isHidden
+                                    ? 'تم إظهار التقييم بنجاح'
+                                    : 'تم إخفاء التقييم عن المنصة',
+                                style: GoogleFonts.cairo(),
+                              ),
+                              backgroundColor: AppColors.success,
+                            ),
+                          );
+                        },
+                        borderRadius: BorderRadius.circular(7),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: isHidden
+                                ? const Color(0xFFECFDF5)
+                                : const Color(0xFFFEF3C7),
+                            borderRadius: BorderRadius.circular(7),
+                            border: Border.all(
+                              color: isHidden
+                                  ? const Color(0xFFA7F3D0)
+                                  : const Color(0xFFFDE68A),
+                            ),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              isHidden
+                                  ? Icons.visibility_outlined
+                                  : Icons.visibility_off_outlined,
+                              size: 15,
+                              color: isHidden
+                                  ? const Color(0xFF059669)
+                                  : const Color(0xFFD97706),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+
+                    // 3. Delete Review Button
+                    Tooltip(
+                      message: 'حذف التقييم نهائياً',
+                      child: InkWell(
+                        onTap: () => _confirmDeleteReview(
+                            context, r['id'].toString(), custName),
+                        borderRadius: BorderRadius.circular(7),
+                        child: Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFEF2F2),
+                            borderRadius: BorderRadius.circular(7),
+                            border: Border.all(color: const Color(0xFFFECACA)),
+                          ),
+                          child: const Center(
+                            child: Icon(Icons.delete_outline_rounded,
+                                size: 15, color: Color(0xFFDC2626)),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
         ],

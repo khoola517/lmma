@@ -203,18 +203,22 @@ class ProviderSidebar extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.errorBorder, width: 1),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.logout, size: 18, color: AppColors.primary),
-                    const SizedBox(width: 12),
-                    Text(
-                      'تسجيل الخروج',
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.primary,
-                        fontWeight: FontWeight.w700,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 35),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.logout, size: 18, color: AppColors.cardBg),
+                      const SizedBox(width: 12),
+                      Text(
+                        'تسجيل الخروج',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: AppColors.cardBg,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

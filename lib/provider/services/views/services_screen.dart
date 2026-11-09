@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/theme/app_text_styles.dart';
@@ -196,12 +197,36 @@ class _ServicesScreenState extends State<ServicesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Header Banner Card with golden yellow gradient
-          const ProviderPageHeaderCard(
+          // 1. Header Banner Card with golden yellow gradient and add button in far left
+          ProviderPageHeaderCard(
             title: 'خدماتي',
             subtitle:
                 'إدارة باقات وخدمات المناسبات المعروضة في منصة خِدمتي والأسعار المباشرة وتحديث الحالة',
             icon: Icons.category_outlined,
+            action: ElevatedButton.icon(
+              onPressed: _openAddService,
+              icon:
+                  const Icon(Icons.add_rounded, size: 20, color: Colors.white),
+              label: Text(
+                'إضافة خدمة جديدة',
+                style: GoogleFonts.cairo(
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryDark,
+                foregroundColor: Colors.white,
+                elevation: 3,
+                shadowColor: AppColors.primaryDark.withOpacity(0.35),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
 
           const SizedBox(height: 24),
@@ -217,7 +242,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   ProviderMetricCard(
                     title: 'إجمالي الخدمات',
                     value: '${services.length}',
-                    subText: 'خدمة مسجلة',
+                    //subText: 'خدمة مسجلة',
                     icon: Icons.category_outlined,
                     iconBg: const Color(0xFFFBEAEA),
                     iconColor: const Color(0xFF681729),
@@ -225,7 +250,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   ProviderMetricCard(
                     title: 'الخدمات النشطة',
                     value: '$activeCount',
-                    subText: 'معروضة للجمهور',
+                    //subText: 'معروضة للجمهور',
                     subTextColor: AppColors.success,
                     icon: Icons.check_circle_outline_rounded,
                     iconBg: const Color(0xFFECFDF5),
@@ -234,7 +259,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   ProviderMetricCard(
                     title: 'الخدمات المتوقفة',
                     value: '$pausedCount',
-                    subText: 'معطلة مؤقتاً',
+                    //subText: 'معطلة مؤقتاً',
                     subTextColor: pausedCount > 0
                         ? AppColors.warning
                         : AppColors.textMuted,
@@ -245,7 +270,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
                   ProviderMetricCard(
                     title: 'التصنيفات المتاحة',
                     value: '${categories.length}',
-                    subText: 'تصنيف معتمد',
+                    //subText: 'تصنيف معتمد',
                     icon: Icons.grid_view_rounded,
                     iconBg: const Color(0xFFEFF6FF),
                     iconColor: const Color(0xFF2563EB),
@@ -257,24 +282,7 @@ class _ServicesScreenState extends State<ServicesScreen> {
 
           const SizedBox(height: 24),
 
-          // 3. Actions & Categories Filter Bar
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              CustomButton(
-                text: 'إضافة خدمة جديدة',
-                icon: Icons.add,
-                variant: ButtonVariant.primary,
-                height: 42,
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                onPressed: _openAddService,
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Categories Filter Tabs
+          // 3. Categories Filter Tabs
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(

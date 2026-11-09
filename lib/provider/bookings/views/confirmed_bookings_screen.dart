@@ -609,41 +609,10 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
 
   // 1. Header Banner Card with golden yellow gradient
   Widget _buildHeaderRow() {
-    return ProviderPageHeaderCard(
+    return const ProviderPageHeaderCard(
       title: 'الحجوزات المؤكدة',
       subtitle:
           'إدارة الحجوزات التي تم تأكيدها ومتابعة مراحل تنفيذها والتواصل مع العملاء',
-      //icon: Icons.event_available_outlined,
-      badge: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.35),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.white.withOpacity(0.5)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: const BoxDecoration(
-                color: Color(0xFF15803D),
-                shape: BoxShape.circle,
-              ),
-            ),
-            // const SizedBox(width: 6),
-            // Text(
-            //   '+ حجوزات معتمدة',
-            //   style: GoogleFonts.cairo(
-            //     color: const Color(0xFF1B1819),
-            //     fontWeight: FontWeight.bold,
-            //     fontSize: 11.5,
-            //   ),
-            // ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -939,7 +908,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
         duration: const Duration(milliseconds: 180),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFCC201) : Colors.transparent,
+          color: isSelected ? const Color(0xFFFCC201) : AppColors.cardBg,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color:

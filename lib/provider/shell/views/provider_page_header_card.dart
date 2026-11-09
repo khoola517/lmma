@@ -9,6 +9,7 @@ class ProviderPageHeaderCard extends StatelessWidget {
   final String subtitle;
   final IconData? icon;
   final Widget? badge;
+  final Widget? action;
 
   const ProviderPageHeaderCard({
     super.key,
@@ -16,6 +17,7 @@ class ProviderPageHeaderCard extends StatelessWidget {
     required this.subtitle,
     this.icon,
     this.badge,
+    this.action,
   });
 
   @override
@@ -45,52 +47,84 @@ class ProviderPageHeaderCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isNarrow = constraints.maxWidth < 600;
+
+          final textContent = Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (icon != null) ...[
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.35),
-                    borderRadius: BorderRadius.circular(10),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.35),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child:
+                          Icon(icon, color: const Color(0xFF2E2527), size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                  ],
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: GoogleFonts.cairo(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        color: const Color(0xFF2E2527),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
                   ),
-                  child: Icon(icon, color: const Color(0xFF2E2527), size: 20),
-                ),
-                const SizedBox(width: 12),
-              ],
-              Flexible(
-                child: Text(
-                  title,
-                  style: GoogleFonts.cairo(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: const Color(0xFF2E2527),
-                    letterSpacing: -0.3,
-                  ),
+                  if (badge != null) ...[
+                    const SizedBox(width: 12),
+                    badge!,
+                  ],
+                ],
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: GoogleFonts.cairo(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF423538),
+                  height: 1.5,
                 ),
               ),
-              if (badge != null) ...[
-                const SizedBox(width: 12),
-                badge!,
-              ],
             ],
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: GoogleFonts.cairo(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: const Color(0xFF423538),
-              height: 1.5,
-            ),
-          ),
-        ],
+          );
+
+          if (action == null) {
+            return textContent;
+          }
+
+          if (isNarrow) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                textContent,
+                const SizedBox(height: 16),
+                action!,
+              ],
+            );
+          }
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: textContent),
+              const SizedBox(width: 20),
+              action!,
+            ],
+          );
+        },
       ),
     );
   }

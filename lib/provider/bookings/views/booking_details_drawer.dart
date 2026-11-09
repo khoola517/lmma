@@ -291,11 +291,21 @@ class _BookingDetailsDrawerState extends State<BookingDetailsDrawer> {
                     const SizedBox.shrink(),
                   Row(
                     children: [
-                      CustomButton(
-                        text: 'إغلاق',
-                        variant: ButtonVariant.ghost,
-                        onPressed: () => Navigator.pop(context),
-                      ),
+                      if (!isCancelled && !isCompleted)
+                    CustomButton(
+                      text: 'إلغاء الحجز',
+                      icon: Icons.cancel_outlined,
+                      variant: ButtonVariant.danger,
+                      onPressed: () {
+                        Navigator.pop(context);
+                        widget.onCancelBooking();
+                      },
+                    ),
+                      // CustomButton(
+                      //   text: 'إغلاق',
+                      //   variant: ButtonVariant.ghost,
+                      //   onPressed: () => Navigator.pop(context),
+                      // ),
                       const SizedBox(width: 10),
                       if (isOngoing && widget.onCompleteBooking != null)
                         ElevatedButton.icon(

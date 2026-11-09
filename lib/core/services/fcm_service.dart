@@ -71,7 +71,9 @@ class FcmService {
   void _initAuthListener() {
     SupabaseConfig.client.auth.onAuthStateChange.listen((data) {
       final event = data.event;
-      if (event == AuthChangeEvent.signedIn || event == AuthChangeEvent.tokenRefreshed) {
+      final hasSession = data.session != null;
+      debugPrint('>>> FCM Web AuthListener event: $event (hasSession: $hasSession)');
+      if (hasSession) {
         syncTokenWithSupabase();
       } else if (event == AuthChangeEvent.signedOut) {
         _currentToken = null;

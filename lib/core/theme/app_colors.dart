@@ -19,10 +19,11 @@ class AppColors {
   static const Color goldLight = Color(0xFFFFF6E5);
   static const Color goldBorder = Color(0xFFE7D8BA);
 
+  
   // الخلفيات والسطوح
   // static const Color creamBg = Color(0xFFF7F3EC);
-
-  static const Color creamBg = Color(0xFFFFFDCD); // خلفية كريمية فاتحة
+static const Color creamBg = Color(0xFFF1ECE3);
+  //static const Color creamBg = Color(0xFFFFFDCD); // خلفية كريمية فاتحة
   static const Color cardBg = Color(0xFFFFFFFF); // بطاقات بيضاء
   static const Color surfaceLow = Color(0xFFFAF7F2);
   static const Color border = Color(0xFFEEE8DF); // حدود أنيقة خفيفة

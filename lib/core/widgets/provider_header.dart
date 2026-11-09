@@ -26,9 +26,6 @@ class ProviderHeader extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: const BoxDecoration(
         color: AppColors.creamBg,
-        border: Border(
-          bottom: BorderSide(color: AppColors.border, width: 1),
-        ),
         boxShadow: [
           BoxShadow(
             color: Color.fromRGBO(46, 37, 39, 0.02),
@@ -46,7 +43,6 @@ class ProviderHeader extends StatelessWidget {
               height: 42,
               decoration: BoxDecoration(
                 color: AppColors.cardBg,
-                //color: AppColors.surfaceLow,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
@@ -238,8 +234,6 @@ class ProviderHeader extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(width: 14),
-          Container(height: 24, width: 1, color: AppColors.border),
           const SizedBox(width: 14),
 
           // Provider Profile Avatar
