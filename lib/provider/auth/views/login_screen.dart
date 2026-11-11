@@ -277,15 +277,15 @@ class _LoginScreenState extends State<LoginScreen> {
             // const SizedBox(height: 24),
 
             // Identifier
-            const SizedBox(height: 20),
-            Text(
-              'اسم المستخدم أو البريد الإلكتروني',
-              style: GoogleFonts.cairo(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: const Color(0xFF4A3E44),
-              ),
-            ),
+            // const SizedBox(height: 20),
+            // Text(
+            //   'اسم المستخدم أو البريد الإلكتروني',
+            //   style: GoogleFonts.cairo(
+            //     fontSize: 13,
+            //     fontWeight: FontWeight.w600,
+            //     color: const Color(0xFF4A3E44),
+            //   ),
+            //),
             const SizedBox(height: 8),
             TextFormField(
               controller: _identifierController,
@@ -333,35 +333,15 @@ class _LoginScreenState extends State<LoginScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  'كلمة المرور',
-                  style: GoogleFonts.cairo(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF4A3E44),
-                  ),
-                ),
-                InkWell(
-                  onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني',
-                          style: GoogleFonts.cairo(),
-                        ),
-                        backgroundColor: AppColors.burgundy,
-                      ),
-                    );
-                  },
-                  child: Text(
-                    'نسيت كلمة المرور؟',
-                    style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.burgundy,
-                    ),
-                  ),
-                ),
+                // Text(
+                //   'كلمة المرور',
+                //   style: GoogleFonts.cairo(
+                //     fontSize: 13,
+                //     fontWeight: FontWeight.w600,
+                //     color: const Color(0xFF4A3E44),
+                //   ),
+                // ),
+                
               ],
             ),
             const SizedBox(height: 8),
@@ -369,7 +349,8 @@ class _LoginScreenState extends State<LoginScreen> {
               controller: _passwordController,
               obscureText: _obscurePassword,
               decoration: InputDecoration(
-                hintText: '••••••••',
+                //hintText: '••••••••',
+                hintText: 'كلمة المرور',
                 hintStyle: GoogleFonts.cairo(
                   fontSize: 13,
                   color: const Color(0xFF8C7B83),
@@ -415,6 +396,32 @@ class _LoginScreenState extends State<LoginScreen> {
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 18),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني',
+                            style: GoogleFonts.cairo(),
+                          ),
+                          backgroundColor: AppColors.burgundy,
+                        ),
+                      );
+                    },
+                    child: Text(
+                      'نسيت كلمة المرور؟',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.burgundy,
+                      ),
+                    ),
+                  ),
             ),
             const SizedBox(height: 24),
 

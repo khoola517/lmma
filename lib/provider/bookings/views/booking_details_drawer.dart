@@ -269,123 +269,109 @@ class _BookingDetailsDrawerState extends State<BookingDetailsDrawer> {
               ),
             ),
 
-            const Divider(height: 1),
+            if (!isCancelled) ...[
+              const Divider(height: 1),
 
-            // Footer Actions
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  if (!isCancelled && !isCompleted)
-                    CustomButton(
-                      text: 'إلغاء الحجز',
-                      icon: Icons.cancel_outlined,
-                      variant: ButtonVariant.danger,
-                      onPressed: () {
-                        Navigator.pop(context);
-                        widget.onCancelBooking();
-                      },
-                    )
-                  else
-                    const SizedBox.shrink(),
-                  Row(
-                    children: [
-                      if (!isCancelled && !isCompleted)
-                    CustomButton(
-                      text: 'إلغاء الحجز',
-                      icon: Icons.cancel_outlined,
-                      variant: ButtonVariant.danger,
-                      onPressed: () {
-                        Navigator.pop(context);
-                        widget.onCancelBooking();
-                      },
-                    ),
-                      // CustomButton(
-                      //   text: 'إغلاق',
-                      //   variant: ButtonVariant.ghost,
-                      //   onPressed: () => Navigator.pop(context),
-                      // ),
+              // Footer Actions
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (!isCompleted) ...[
+                      CustomButton(
+                        text: 'إلغاء الحجز',
+                        icon: Icons.cancel_outlined,
+                        variant: ButtonVariant.danger,
+                        onPressed: () {
+                          Navigator.pop(context);
+                          widget.onCancelBooking();
+                        },
+                      ),
                       const SizedBox(width: 10),
-                      if (isOngoing && widget.onCompleteBooking != null)
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            widget.onCompleteBooking!();
-                          },
-                          icon: const Icon(Icons.check_circle_rounded,
-                              size: 18, color: Colors.white),
-                          label: Text(
-                            'إتمام وتسليم الخدمة',
-                            style: GoogleFonts.cairo(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: Colors.white,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF059669),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 10),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
-                        )
-                      else if (!isCancelled && !isCompleted && !isOngoing)
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            widget.onStartExecution();
-                          },
-                          icon: const Icon(Icons.play_arrow_rounded,
-                              size: 18, color: Colors.white),
-                          label: Text(
-                            'بدء التنفيذ',
-                            style: GoogleFonts.cairo(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                              color: Colors.white,
-                            ),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF681729),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 18, vertical: 10),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10)),
-                          ),
-                        )
-                      else if (isCompleted)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFECFDF5),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: const Color(0xFFA7F3D0)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(Icons.verified_rounded,
-                                  size: 16, color: Color(0xFF059669)),
-                              const SizedBox(width: 6),
-                              Text(
-                                'الخدمة مكتملة ومسلّمة',
-                                style: GoogleFonts.cairo(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF059669),
-                                ),
-                              ),
-                            ],
+                    ],
+                    if (isOngoing && widget.onCompleteBooking != null)
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          widget.onCompleteBooking!();
+                        },
+                        icon: const Icon(Icons.check_circle_rounded,
+                            size: 18, color: Colors.white),
+                        label: Text(
+                          'إتمام وتسليم الخدمة',
+                          style: GoogleFonts.cairo(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Colors.white,
                           ),
                         ),
-                    ],
-                  ),
-                ],
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF059669),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                      )
+                    else if (!isCompleted && !isOngoing)
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          widget.onStartExecution();
+                        },
+                        icon: const Icon(Icons.play_arrow_rounded,
+                            size: 18, color: Colors.white),
+                        label: Text(
+                          'بدء التنفيذ',
+                          style: GoogleFonts.cairo(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Colors.white,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 2,
+                          shadowColor: AppColors.primary.withOpacity(0.35),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 18, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
+                      )
+                    else if (isCompleted)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFECFDF5),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFA7F3D0)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.verified_rounded,
+                                size: 16, color: Color(0xFF059669)),
+                            const SizedBox(width: 6),
+                            Text(
+                              'الخدمة مكتملة ومسلّمة',
+                              style: GoogleFonts.cairo(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: const Color(0xFF059669),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),

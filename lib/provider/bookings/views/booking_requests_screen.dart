@@ -12,6 +12,7 @@ import 'package:khadematy_web/provider/profile/providers/profile_provider.dart';
 import 'package:khadematy_web/provider/shell/views/provider_page_header_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_metric_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_stats_row.dart';
+import 'package:khadematy_web/provider/shell/views/provider_filter_chip.dart';
 
 class BookingRequestsScreen extends StatefulWidget {
   const BookingRequestsScreen({super.key});
@@ -21,6 +22,7 @@ class BookingRequestsScreen extends StatefulWidget {
 }
 
 class _BookingRequestsScreenState extends State<BookingRequestsScreen> {
+  String _selectedFilter = 'all'; // 'all', 'waiting', 'urgent', 'expired'
   @override
   void initState() {
     super.initState();
@@ -125,6 +127,18 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen> {
     final bookingsProvider = context.watch<BookingsProvider>();
     final requests = bookingsProvider.pendingRequests;
 
+    final urgentCount = requests.where((r) => r.isUrgent).length;
+    final expiredCount = requests.where((r) => r.isExpired).length;
+    final waitingCount =
+        requests.where((r) => !r.isUrgent && !r.isExpired).length;
+
+    final filteredRequests = requests.where((r) {
+      if (_selectedFilter == 'urgent') return r.isUrgent;
+      if (_selectedFilter == 'expired') return r.isExpired;
+      if (_selectedFilter == 'waiting') return !r.isUrgent && !r.isExpired;
+      return true;
+    }).toList();
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(28),
       child: Column(
@@ -183,37 +197,41 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen> {
 
           const SizedBox(height: 24),
 
-          // Error banner if any
-          // if (bookingsProvider.errorMessage != null) ...[
-          //   Container(
-          //     padding: const EdgeInsets.all(16),
-          //     margin: const EdgeInsets.only(bottom: 20),
-          //     decoration: BoxDecoration(
-          //       color: AppColors.errorBg,
-          //       borderRadius: BorderRadius.circular(12),
-          //       border: Border.all(color: AppColors.error.withOpacity(0.3)),
-          //     ),
-          //     child: Row(
-          //       children: [
-          //         const Icon(Icons.error_outline, color: AppColors.error),
-          //         const SizedBox(width: 12),
-          //         Expanded(
-          //           child: Text(
-          //             bookingsProvider.errorMessage!,
-          //             style: AppTextStyles.bodyMedium
-          //                 .copyWith(color: AppColors.error),
-          //           ),
-          //         ),
-          //         CustomButton(
-          //           text: 'إعادة المحاولة',
-          //           variant: ButtonVariant.danger,
-          //           height: 36,
-          //           onPressed: () => bookingsProvider.loadBookings(force: true),
-          //         ),
-          //       ],
-          //     ),
-          //   ),
-          // ],
+          // 3. Filter Chips Row (Unified with Reviews & Bookings screens)
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              ProviderFilterChip(
+                label: 'جميع الطلبات (${requests.length})',
+                isSelected: _selectedFilter == 'all',
+                onTap: () => setState(() => _selectedFilter = 'all'),
+              ),
+              ProviderFilterChip(
+                label: 'بانتظار الرد ($waitingCount)',
+                isSelected: _selectedFilter == 'waiting',
+                onTap: () => setState(() => _selectedFilter =
+                    _selectedFilter == 'waiting' ? 'all' : 'waiting'),
+              ),
+              ProviderFilterChip(
+                label: 'مهلة وشيكة ($urgentCount)',
+                isSelected: _selectedFilter == 'urgent',
+                activeColor: const Color(0xFFD97706),
+                onTap: () => setState(() => _selectedFilter =
+                    _selectedFilter == 'urgent' ? 'all' : 'urgent'),
+              ),
+              ProviderFilterChip(
+                label: 'انتهت المهلة ($expiredCount)',
+                isSelected: _selectedFilter == 'expired',
+                activeColor: AppColors.error,
+                onTap: () => setState(() => _selectedFilter =
+                    _selectedFilter == 'expired' ? 'all' : 'expired'),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 20),
 
           // Loading state
           if (bookingsProvider.isLoading && requests.isEmpty)
@@ -264,14 +282,39 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen> {
                 ),
               ),
             )
+          else if (filteredRequests.isEmpty)
+            CustomCard(
+              padding: const EdgeInsets.all(40),
+              child: Center(
+                child: Column(
+                  children: [
+                    const Icon(Icons.filter_list_off_rounded,
+                        size: 46, color: AppColors.textMuted),
+                    const SizedBox(height: 12),
+                    Text(
+                      'لا توجد طلبات مطابقة للتصفية المختارة',
+                      style: AppTextStyles.headlineSmall
+                          .copyWith(fontWeight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 14),
+                    CustomButton(
+                      text: 'عرض جميع الطلبات',
+                      variant: ButtonVariant.outline,
+                      height: 38,
+                      onPressed: () => setState(() => _selectedFilter = 'all'),
+                    ),
+                  ],
+                ),
+              ),
+            )
           else
             ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: requests.length,
+              itemCount: filteredRequests.length,
               separatorBuilder: (context, index) => const SizedBox(height: 20),
               itemBuilder: (context, index) {
-                final req = requests[index];
+                final req = filteredRequests[index];
                 return _buildRequestCard(context, req, bookingsProvider);
               },
             ),
@@ -409,10 +452,24 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen> {
               // Badges (Code & Remaining Timer)
               Row(
                 children: [
-                  StatusBadge(
-                    label: 'بانتظار الرد (${req.remainingHours} ساعة متبقية)',
-                    type: StatusBadgeType.waiting,
-                  ),
+                  if (req.isExpired)
+                    StatusBadge(
+                      label: 'انتهت المهلة (${req.defaultResponseHours} س)',
+                      type: StatusBadgeType.cancelled,
+                      icon: Icons.timer_off_outlined,
+                    )
+                  else if (req.isUrgent)
+                    StatusBadge(
+                      label: 'مهلة وشيكة (${req.remainingDisplay})',
+                      type: StatusBadgeType.inProgress,
+                      icon: Icons.hourglass_bottom_rounded,
+                    )
+                  else
+                    StatusBadge(
+                      label: 'بانتظار الرد (${req.remainingDisplay})',
+                      type: StatusBadgeType.waiting,
+                      icon: Icons.access_time_rounded,
+                    ),
                   const SizedBox(width: 8),
                   // Container(
                   //   padding:

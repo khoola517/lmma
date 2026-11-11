@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'core/theme/app_theme.dart';
 import 'core/config/supabase_config.dart';
 import 'core/services/fcm_service.dart';
+import 'core/services/live_notification_banner_service.dart';
+import 'core/widgets/in_app_notification_overlay.dart';
 import 'provider/auth/providers/auth_provider.dart';
 import 'provider/shell/providers/navigation_provider.dart';
 import 'provider/services/providers/services_provider.dart';
@@ -60,9 +62,14 @@ class KhadematyProviderApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         scrollBehavior: const AppScrollBehavior(),
         builder: (context, child) {
+          LiveNotificationBannerService.instance.initialize(
+            settingsResolver: () => context.read<ProfileProvider>().settings,
+          );
           return Directionality(
             textDirection: TextDirection.rtl,
-            child: child ?? const SizedBox.shrink(),
+            child: InAppNotificationOverlay(
+              child: child ?? const SizedBox.shrink(),
+            ),
           );
         },
         initialRoute: '/',

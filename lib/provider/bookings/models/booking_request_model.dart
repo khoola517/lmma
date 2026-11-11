@@ -13,6 +13,8 @@ class BookingRequestModel {
   final String location;
   final String timeAgo;
   final int remainingHours;
+  final int remainingMinutes;
+  final int defaultResponseHours;
   final String eventType;
   final String eventDate;
   final String eventTime;
@@ -25,6 +27,18 @@ class BookingRequestModel {
   final List<String> bookingItemIds;
   final DateTime? createdAt;
 
+  bool get isExpired => (createdAt != null) ? remainingMinutes <= 0 : false;
+  bool get isUrgent => !isExpired && remainingHours <= 6;
+
+  String get remainingDisplay {
+    if (isExpired) return 'انتهت المهلة';
+    if (remainingHours <= 0) {
+      final mins = remainingMinutes > 0 ? remainingMinutes : 0;
+      return '$mins دقيقة';
+    }
+    return '$remainingHours ساعة';
+  }
+
   BookingRequestModel({
     required this.id,
     required this.code,
@@ -34,6 +48,8 @@ class BookingRequestModel {
     required this.location,
     required this.timeAgo,
     required this.remainingHours,
+    this.remainingMinutes = 1440,
+    this.defaultResponseHours = 24,
     required this.eventType,
     required this.eventDate,
     required this.eventTime,
@@ -50,6 +66,7 @@ class BookingRequestModel {
   factory BookingRequestModel.fromJson(
     Map<String, dynamic> json, {
     String? targetProviderId,
+    int defaultResponseHours = 24,
   }) {
     final customer = json['customer'] as Map<String, dynamic>?;
     final customerName = customer?['full_name'] as String? ?? 'عميل خِدمتي';
@@ -119,7 +136,8 @@ class BookingRequestModel {
     }
 
     String timeAgo = 'الآن';
-    int remainingHours = 24;
+    int remainingHours = defaultResponseHours;
+    int remainingMinutes = defaultResponseHours * 60;
     if (createdAt != null) {
       final now = DateTime.now();
       final diff = now.difference(createdAt);
@@ -132,9 +150,10 @@ class BookingRequestModel {
         timeAgo = 'منذ ${diff.inDays} يوم';
       }
 
-      final windowEnd = createdAt.add(const Duration(hours: 48));
-      final hoursLeft = windowEnd.difference(now).inHours;
-      remainingHours = hoursLeft > 0 ? hoursLeft : 0;
+      final windowEnd = createdAt.add(Duration(hours: defaultResponseHours));
+      final diffToDeadline = windowEnd.difference(now);
+      remainingHours = diffToDeadline.inHours;
+      remainingMinutes = diffToDeadline.inMinutes;
     }
 
     final rawStatus = (json['status'] as String? ?? '').toLowerCase();
@@ -160,6 +179,8 @@ class BookingRequestModel {
       location: location,
       timeAgo: timeAgo,
       remainingHours: remainingHours,
+      remainingMinutes: remainingMinutes,
+      defaultResponseHours: defaultResponseHours,
       eventType: json['event_type'] as String? ?? 'مناسبة خاصة',
       eventDate: eventDate,
       eventTime: eventTime,
@@ -183,6 +204,8 @@ class BookingRequestModel {
     String? location,
     String? timeAgo,
     int? remainingHours,
+    int? remainingMinutes,
+    int? defaultResponseHours,
     String? eventType,
     String? eventDate,
     String? eventTime,
@@ -204,6 +227,8 @@ class BookingRequestModel {
       location: location ?? this.location,
       timeAgo: timeAgo ?? this.timeAgo,
       remainingHours: remainingHours ?? this.remainingHours,
+      remainingMinutes: remainingMinutes ?? this.remainingMinutes,
+      defaultResponseHours: defaultResponseHours ?? this.defaultResponseHours,
       eventType: eventType ?? this.eventType,
       eventDate: eventDate ?? this.eventDate,
       eventTime: eventTime ?? this.eventTime,

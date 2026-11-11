@@ -248,12 +248,16 @@ class ProviderSidebar extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.burgundyLight : Colors.transparent,
+            color: isSelected ? AppColors.primary : Colors.transparent,
             borderRadius: BorderRadius.circular(12),
-            border: isSelected
-                ? const Border(
-                    right: BorderSide(color: AppColors.burgundy, width: 3.5),
-                  )
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.28),
+                      blurRadius: 8,
+                      offset: const Offset(0, 3),
+                    ),
+                  ]
                 : null,
           ),
           child: Row(
@@ -261,16 +265,14 @@ class ProviderSidebar extends StatelessWidget {
               Icon(
                 icon,
                 size: 20,
-                color:
-                    isSelected ? AppColors.burgundy : AppColors.textSecondary,
+                color: isSelected ? Colors.white : AppColors.textSecondary,
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
                   title,
                   style: AppTextStyles.titleMedium.copyWith(
-                    color:
-                        isSelected ? AppColors.burgundy : AppColors.textPrimary,
+                    color: isSelected ? Colors.white : AppColors.textPrimary,
                     fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
@@ -280,18 +282,24 @@ class ProviderSidebar extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
-                    color: badgeColor ?? AppColors.surfaceLow,
+                    color: isSelected
+                        ? Colors.white.withOpacity(0.22)
+                        : (badgeColor ?? AppColors.surfaceLow),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: badgeTextColor != null
-                          ? badgeTextColor.withOpacity(0.3)
-                          : AppColors.border,
+                      color: isSelected
+                          ? Colors.white.withOpacity(0.45)
+                          : (badgeTextColor != null
+                              ? badgeTextColor.withOpacity(0.3)
+                              : AppColors.border),
                     ),
                   ),
                   child: Text(
                     badgeText,
                     style: AppTextStyles.labelSmall.copyWith(
-                      color: badgeTextColor ?? AppColors.textPrimary,
+                      color: isSelected
+                          ? Colors.white
+                          : (badgeTextColor ?? AppColors.textPrimary),
                       fontWeight: FontWeight.w700,
                     ),
                   ),

@@ -1,10 +1,12 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:khadematy_web/core/config/supabase_config.dart';
 import 'package:khadematy_web/core/services/storage_service.dart';
 import 'package:khadematy_web/core/services/supabase_realtime_service.dart';
 import 'package:khadematy_web/data/mock/provider_mock_data.dart';
 import 'package:khadematy_web/provider/profile/models/provider_profile_model.dart';
+import 'package:khadematy_web/provider/settings/models/provider_settings_model.dart';
 import 'package:khadematy_web/provider/reviews/models/review_model.dart';
 import 'package:khadematy_web/admin/notifications/models/admin_notification_model.dart';
 
@@ -32,6 +34,7 @@ class ProfileProvider extends ChangeNotifier {
 
   // Getters
   ProviderProfileModel get profile => _profile;
+  ProviderSettingsModel get settings => _profile.settings;
   bool get isLoading => _isLoading;
   bool get isSaving => _isSaving;
   String? get errorMessage => _errorMessage;
@@ -359,6 +362,55 @@ class ProfileProvider extends ChangeNotifier {
     } finally {
       _isSaving = false;
       notifyListeners();
+    }
+  }
+
+  /// تحديث وحفظ تفضيلات إعدادات المزود والإشعارات والمهلة
+  Future<bool> updateSettings(ProviderSettingsModel newSettings) async {
+    final previousSettings = _profile.settings;
+    _errorMessage = null;
+    _profile = _profile.copyWith(settings: newSettings);
+    notifyListeners();
+
+    try {
+      final currentUser = SupabaseConfig.client.auth.currentUser;
+      final userId = _profile.userId ?? currentUser?.id;
+      final providerId = _profile.id;
+
+      if ((providerId == null || providerId.isEmpty) &&
+          (userId == null || userId.isEmpty)) {
+        _profile = _profile.copyWith(settings: previousSettings);
+        _errorMessage = 'تعذر تحديد حساب مقدم الخدمة لحفظ الإعدادات';
+        notifyListeners();
+        return false;
+      }
+
+      if (providerId != null && providerId.isNotEmpty) {
+        await SupabaseConfig.client.from('provider_profiles').update({
+          'settings': newSettings.toJson(),
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', providerId);
+      } else if (userId != null && userId.isNotEmpty) {
+        await SupabaseConfig.client.from('provider_profiles').update({
+          'settings': newSettings.toJson(),
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('user_id', userId);
+      }
+
+      // حفظ نسخة احتياطية في user_metadata
+      try {
+        await SupabaseConfig.client.auth.updateUser(
+          UserAttributes(data: {'settings': newSettings.toJson()}),
+        );
+      } catch (_) {}
+
+      return true;
+    } catch (e) {
+      debugPrint('Error saving provider settings to Supabase: $e');
+      _profile = _profile.copyWith(settings: previousSettings);
+      _errorMessage = 'تعذر حفظ الإعدادات في Supabase: $e';
+      notifyListeners();
+      return false;
     }
   }
 

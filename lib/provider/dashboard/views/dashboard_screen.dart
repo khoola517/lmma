@@ -62,17 +62,11 @@ class DashboardScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 24),
-                    // Secondary Column (Performance & Top Services)
+                    // Secondary Column (Top Services)
                     Expanded(
                       flex: 2,
-                      child: Column(
-                        children: [
-                          _buildPerformanceKpiCard(context, bookingsProvider),
-                          const SizedBox(height: 24),
-                          _buildTopServicesCard(
-                              context, navProvider, servicesProvider),
-                        ],
-                      ),
+                      child: _buildTopServicesCard(
+                          context, navProvider, servicesProvider),
                     ),
                   ],
                 );
@@ -84,8 +78,6 @@ class DashboardScreen extends StatelessWidget {
                     const SizedBox(height: 24),
                     _buildUpcomingBookingsSection(
                         context, navProvider, bookingsProvider),
-                    const SizedBox(height: 24),
-                    _buildPerformanceKpiCard(context, bookingsProvider),
                     const SizedBox(height: 24),
                     _buildTopServicesCard(
                         context, navProvider, servicesProvider),
@@ -301,10 +293,24 @@ class DashboardScreen extends StatelessWidget {
                                   style: AppTextStyles.titleMedium
                                       .copyWith(fontWeight: FontWeight.w700),
                                 ),
-                                StatusBadge(
-                                  label: 'متبقي ${req.remainingHours} ساعة',
-                                  type: StatusBadgeType.waiting,
-                                ),
+                                if (req.isExpired)
+                                  const StatusBadge(
+                                    label: 'انتهت المهلة',
+                                    type: StatusBadgeType.cancelled,
+                                    icon: Icons.timer_off_outlined,
+                                  )
+                                else if (req.isUrgent)
+                                  StatusBadge(
+                                    label: 'مهلة وشيكة (${req.remainingDisplay})',
+                                    type: StatusBadgeType.inProgress,
+                                    icon: Icons.hourglass_bottom_rounded,
+                                  )
+                                else
+                                  StatusBadge(
+                                    label: 'متبقي ${req.remainingDisplay}',
+                                    type: StatusBadgeType.waiting,
+                                    icon: Icons.access_time_rounded,
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 4),
@@ -325,7 +331,7 @@ class DashboardScreen extends StatelessWidget {
                             '${req.budget.toStringAsFixed(0)} ر.ي',
                             style: AppTextStyles.titleMedium.copyWith(
                               color: AppColors.burgundy,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -524,7 +530,7 @@ class DashboardScreen extends StatelessWidget {
                       Text(
                         '${b.totalAmount.toStringAsFixed(0)} ر.ي',
                         style: AppTextStyles.titleMedium.copyWith(
-                          color: AppColors.textPrimary,
+                          color: AppColors.burgundy,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -538,103 +544,10 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPerformanceKpiCard(
-      BuildContext context, BookingsProvider bookingsProvider) {
-    final rate = bookingsProvider.acceptanceRate;
-    final ratePercentage = '${(rate * 100).toStringAsFixed(0)}%';
-
-    return CustomCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: AppColors.burgundyLight,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.analytics_outlined,
-                    color: AppColors.burgundy, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Flexible(
-                child: Text(
-                  'مؤشرات الأداء والجودة',
-                  style: AppTextStyles.headlineSmall.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          const Divider(height: 1),
-          const SizedBox(height: 18),
-          _buildKpiProgressItem(
-              'نسبة رضا العملاء', '98.4%', 0.984, AppColors.success),
-          const SizedBox(height: 14),
-          _buildKpiProgressItem(
-              'الالتزام بمواعيد التسليم', '100%', 1.0, AppColors.burgundy),
-          const SizedBox(height: 14),
-          _buildKpiProgressItem(
-              'سرعة الرد على الطلبات', '94%', 0.94, AppColors.goldDark),
-          const SizedBox(height: 14),
-          _buildKpiProgressItem(
-              'معدل قبول الحجوزات', ratePercentage, rate, AppColors.info),
-        ],
-      ),
-    );
-  }
-
   static String _formatCurrency(num amount) {
     final str = amount.toStringAsFixed(0);
     final regExp = RegExp(r'\B(?=(\d{3})+(?!\d))');
     return '${str.replaceAll(regExp, ',')} ر.ي';
-  }
-
-  Widget _buildKpiProgressItem(
-      String title, String percentage, double value, Color color) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Flexible(
-              child: Text(
-                title,
-                style: AppTextStyles.labelMedium
-                    .copyWith(color: AppColors.textPrimary),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Text(
-              percentage,
-              style: AppTextStyles.labelLarge.copyWith(
-                color: color,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(6),
-          child: LinearProgressIndicator(
-            value: value,
-            minHeight: 8,
-            backgroundColor: AppColors.surfaceLow,
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildTopServicesCard(

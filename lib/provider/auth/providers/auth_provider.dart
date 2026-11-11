@@ -494,17 +494,58 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// تحديث كلمة المرور
-  Future<bool> updatePassword(String newPassword) async {
+  /// تحديث كلمة المرور (مع التحقق من كلمة المرور الحالية عند تمريرها)
+  Future<bool> updatePassword(
+    String newPassword, {
+    String? currentPassword,
+  }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
 
     try {
-      await SupabaseConfig.client.auth.updateUser(
+      final user = SupabaseConfig.client.auth.currentUser;
+      if (user == null) {
+        _errorMessage = 'يجب تسجيل الدخول أولاً لتحديث كلمة المرور.';
+        return false;
+      }
+
+      final email = (user.email != null && user.email!.isNotEmpty)
+          ? user.email!
+          : (_userProfile?.email ?? '');
+
+      if (currentPassword != null &&
+          currentPassword.isNotEmpty &&
+          email.isNotEmpty) {
+        try {
+          await SupabaseConfig.client.auth.signInWithPassword(
+            email: email,
+            password: currentPassword,
+          );
+        } on AuthException catch (e) {
+          final lower = e.message.toLowerCase();
+          if (e.code == 'invalid_credentials' ||
+              lower.contains('invalid login credentials') ||
+              lower.contains('invalid_credentials')) {
+            _errorMessage = 'كلمة المرور الحالية غير صحيحة.';
+          } else {
+            _errorMessage = _mapAuthError(e.message, code: e.code);
+          }
+          return false;
+        }
+      }
+
+      final response = await SupabaseConfig.client.auth.updateUser(
         UserAttributes(password: newPassword),
       );
+      if (response.user == null) {
+        _errorMessage = 'تعذر تأكيد تحديث كلمة المرور في Supabase.';
+        return false;
+      }
       return true;
+    } on AuthException catch (e) {
+      _errorMessage = _mapAuthError(e.message, code: e.code);
+      return false;
     } catch (e) {
       debugPrint('Error updating password: $e');
       _errorMessage = 'فشل تحديث كلمة المرور: $e';
@@ -606,18 +647,40 @@ class AuthProvider extends ChangeNotifier {
     super.dispose();
   }
 
-  String _mapAuthError(String message) {
-    if (message.contains('Invalid login credentials')) {
+  String _mapAuthError(String message, {String? code}) {
+    final lower = message.toLowerCase();
+    if (code == 'invalid_credentials' ||
+        message.contains('Invalid login credentials')) {
       return 'بيانات الدخول غير صحيحة. يرجى التأكد من البريد الإلكتروني وكلمة المرور.';
     }
-    if (message.contains('User already registered')) {
+    if (code == 'user_already_exists' ||
+        message.contains('User already registered')) {
       return 'البريد الإلكتروني مسجل مسبقاً في النظام. يمكنك تسجيل الدخول بدلاً من ذلك.';
     }
-    if (message.contains('Password should be at least')) {
-      return 'كلمة المرور يجب أن تكون 6 أحرف أو أرقام على الأقل.';
+    if (code == 'weak_password' ||
+        message.contains('Password should be at least')) {
+      return 'كلمة المرور يجب أن تكون 6 أحرف أو أرقام على الأقل وبقوة مقبولة.';
     }
-    if (message.contains('Email rate limit exceeded')) {
+    if (code == 'same_password' ||
+        message.contains('New password should be different')) {
+      return 'كلمة المرور الجديدة يجب أن تختلف عن كلمة المرور الحالية.';
+    }
+    if (code == 'reauthentication_needed' ||
+        code == 'reauth_nonce_missing' ||
+        lower.contains('reauthentication')) {
+      return 'يتطلب Supabase إعادة توثيق عبر البريد الإلكتروني لتغيير كلمة المرور (إعداد Secure Password Change مفعّل).';
+    }
+    if (code == 'over_request_rate_limit' ||
+        code == 'over_email_send_rate_limit' ||
+        message.contains('Email rate limit exceeded') ||
+        lower.contains('rate limit')) {
       return 'تم تجاوز الحد الأقصى للمحاولات. يرجى الانتظار بضع دقائق والمحاولة مجدداً.';
+    }
+    if (code == 'session_missing' ||
+        code == 'session_expired' ||
+        code == 'session_not_found' ||
+        lower.contains('auth session missing')) {
+      return 'انتهت جلسة تسجيل الدخول. يرجى تسجيل الدخول مجدداً ثم المحاولة.';
     }
     return message;
   }

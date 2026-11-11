@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/services/storage_service.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/theme/app_text_styles.dart';
-import 'package:khadematy_web/core/widgets/custom_button.dart';
 import 'package:khadematy_web/core/widgets/custom_card.dart';
 import 'package:khadematy_web/provider/profile/models/provider_profile_model.dart';
 import 'package:khadematy_web/provider/profile/providers/profile_provider.dart';
@@ -151,67 +150,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 title: 'الملف الشخصي لمقدم الخدمة',
                 subtitle:
                     'البيانات الرسمية ومعلومات التواصل والنشاط التجاري المعتمدة في منصة خِدمتي',
-                icon: Icons.account_circle_outlined,
+                //icon: Icons.account_circle_outlined,
               ),
 
               const SizedBox(height: 24),
 
               // 2. 4 Metric Cards (Live from Supabase in a single horizontal row)
-              ProviderStatsRow(
-                minWidth: 800,
-                cards: [
-                  ProviderMetricCard(
-                    title: 'الحجوزات المكتملة',
-                    value: '${profile.completedBookingsCount}',
-                    subText: 'حجز منفذ',
-                    icon: Icons.task_alt_rounded,
-                    iconBg: const Color(0xFFFBEAEA),
-                    iconColor: const Color(0xFF681729),
-                  ),
-                  ProviderMetricCard(
-                    title: 'متوسط التقييم',
-                    value: '${profile.overallRating.toStringAsFixed(1)} ★',
-                    subText: 'تقييم عام',
-                    icon: Icons.star_rounded,
-                    iconBg: const Color(0xFFFEF3C7),
-                    iconColor: const Color(0xFFD97706),
-                  ),
-                  ProviderMetricCard(
-                    title: 'تصنيف النشاط',
-                    value: profile.category.isNotEmpty
-                        ? profile.category
-                        : 'تنظيم مناسبات',
-                    subText: 'المجال المعتمد',
-                    icon: Icons.category_outlined,
-                    iconBg: const Color(0xFFECFDF5),
-                    iconColor: const Color(0xFF059669),
-                  ),
-                  ProviderMetricCard(
-                    title: 'حالة الحساب',
-                    value: profile.isVerified ? 'موثق' : 'نشط',
-                    subText: profile.isVerified ? 'معتمد رسمي' : 'مسجل',
-                    subTextColor: AppColors.success,
-                    icon: Icons.verified_user_outlined,
-                    iconBg: const Color(0xFFEFF6FF),
-                    iconColor: const Color(0xFF2563EB),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 24),
-
-              // Edit Action Button Row
-              Align(
-                alignment: Alignment.centerLeft,
-                child: CustomButton(
-                  text: 'تعديل الملف الشخصي',
-                  icon: Icons.edit_note_rounded,
-                  variant: ButtonVariant.primary,
-                  onPressed: () => _openEditDialog(profile, profileProvider),
-                ),
-              ),
-
-              const SizedBox(height: 24),
+              // ProviderStatsRow(
+              //   minWidth: 800,
+              //   cards: [
+              //     ProviderMetricCard(
+              //       title: 'الحجوزات المكتملة',
+              //       value: '${profile.completedBookingsCount}',
+              //       subText: 'حجز منفذ',
+              //       icon: Icons.task_alt_rounded,
+              //       iconBg: const Color(0xFFFBEAEA),
+              //       iconColor: const Color(0xFF681729),
+              //     ),
+              //     ProviderMetricCard(
+              //       title: 'متوسط التقييم',
+              //       value: '${profile.overallRating.toStringAsFixed(1)} ★',
+              //       subText: 'تقييم عام',
+              //       icon: Icons.star_rounded,
+              //       iconBg: const Color(0xFFFEF3C7),
+              //       iconColor: const Color(0xFFD97706),
+              //     ),
+              //     ProviderMetricCard(
+              //       title: 'تصنيف النشاط',
+              //       value: profile.category.isNotEmpty
+              //           ? profile.category
+              //           : 'تنظيم مناسبات',
+              //       subText: 'المجال المعتمد',
+              //       icon: Icons.category_outlined,
+              //       iconBg: const Color(0xFFECFDF5),
+              //       iconColor: const Color(0xFF059669),
+              //     ),
+              //     ProviderMetricCard(
+              //       title: 'حالة الحساب',
+              //       value: profile.isVerified ? 'موثق' : 'نشط',
+              //       subText: profile.isVerified ? 'معتمد رسمي' : 'مسجل',
+              //       subTextColor: AppColors.success,
+              //       icon: Icons.verified_user_outlined,
+              //       iconBg: const Color(0xFFEFF6FF),
+              //       iconColor: const Color(0xFF2563EB),
+              //     ),
+              //   ],
+              // ),
 
               // Error notification if present
               if (profileProvider.errorMessage != null)
@@ -389,48 +373,79 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             ],
                           ),
                         ),
+                        const SizedBox(width: 12),
+                        Tooltip(
+                          message: 'تعديل الملف الشخصي',
+                          child: InkWell(
+                            onTap: () =>
+                                _openEditDialog(profile, profileProvider),
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withOpacity(0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.edit_outlined,
+                                  size: 20,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 18),
 
                     // Quick Stats Chips Row
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceLow,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          _buildStatItem(
-                            label: 'التقييم العام',
-                            value:
-                                '★ ${profileProvider.averageRating.toStringAsFixed(1)}',
-                            color: AppColors.goldDark,
-                          ),
-                          Container(
-                              width: 1, height: 32, color: AppColors.border),
-                          _buildStatItem(
-                            label: 'إجمالي التقييمات',
-                            value: '${profileProvider.totalReviewsCount} تقييم',
-                            color: AppColors.burgundy,
-                          ),
-                          Container(
-                              width: 1, height: 32, color: AppColors.border),
-                          _buildStatItem(
-                            label: 'الحجوزات المكتملة',
-                            value: '${profile.completedBookingsCount} حجز',
-                            color: Colors.green.shade800,
-                          ),
-                        ],
-                      ),
-                    ),
+                    // Container(
+                    //   padding: const EdgeInsets.symmetric(
+                    //       horizontal: 16, vertical: 12),
+                    //   decoration: BoxDecoration(
+                    //     color: AppColors.surfaceLow,
+                    //     borderRadius: BorderRadius.circular(14),
+                    //     border: Border.all(color: AppColors.border),
+                    //   ),
+                    //   child: Row(
+                    //     mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    //     children: [
+                    //       _buildStatItem(
+                    //         label: 'التقييم العام',
+                    //         value:
+                    //             '★ ${profileProvider.averageRating.toStringAsFixed(1)}',
+                    //         color: AppColors.goldDark,
+                    //       ),
+                    //       Container(
+                    //           width: 1, height: 32, color: AppColors.border),
+                    //       _buildStatItem(
+                    //         label: 'إجمالي التقييمات',
+                    //         value: '${profileProvider.totalReviewsCount} تقييم',
+                    //         color: AppColors.burgundy,
+                    //       ),
+                    //       Container(
+                    //           width: 1, height: 32, color: AppColors.border),
+                    //       _buildStatItem(
+                    //         label: 'الحجوزات المكتملة',
+                    //         value: '${profile.completedBookingsCount} حجز',
+                    //         color: Colors.green.shade800,
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
 
-                    const SizedBox(height: 28),
+                    //const SizedBox(height: 28),
                     const Divider(height: 1),
                     const SizedBox(height: 28),
 
@@ -519,7 +534,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                     child: Text(
                                       profile.bio.isNotEmpty
                                           ? profile.bio
-                                          : 'لم يتم إضافة نبذة تعريفية بعد. يمكنك الضغط على "تعديل الملف الشخصي" لإضافتها.',
+                                          : 'لم يتم إضافة نبذة تعريفية بعد. يمكنك الضغط على أيقونة التعديل بالأعلى لإضافتها.',
                                       style: AppTextStyles.bodyMedium.copyWith(
                                         color: profile.bio.isNotEmpty
                                             ? AppColors.textPrimary
@@ -534,54 +549,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ],
                         );
                       },
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    // Badges and Guarantees
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: AppColors.burgundyLight,
-                        borderRadius: BorderRadius.circular(16),
-                        border:
-                            Border.all(color: AppColors.burgundyLightBorder),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 44,
-                            height: 44,
-                            decoration: const BoxDecoration(
-                              color: AppColors.burgundy,
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Icon(Icons.shield_outlined,
-                                color: AppColors.gold, size: 24),
-                          ),
-                          const SizedBox(width: 16),
-                          // Expanded(
-                          //   child: Column(
-                          //     crossAxisAlignment: CrossAxisAlignment.start,
-                          //     children: [
-                          //       Text(
-                          //         'وثيقة التزام الجودة والاعتماد',
-                          //         style: AppTextStyles.labelLarge.copyWith(
-                          //           color: AppColors.burgundy,
-                          //           fontWeight: FontWeight.w800,
-                          //         ),
-                          //       ),
-                          //       const SizedBox(height: 2),
-                          //       Text(
-                          //         'بيانات ملفك الشخصي متزامنة لحظياً مع خوادم خِدمتي وتخضع لمعايير الجودة والضمان لخدمة العملاء بأعلى احترافية.',
-                          //         style: AppTextStyles.bodySmall
-                          //             .copyWith(color: AppColors.textSecondary),
-                          //       ),
-                          //     ],
-                          //   ),
-                          // ),
-                        ],
-                      ),
                     ),
                   ],
                 ),

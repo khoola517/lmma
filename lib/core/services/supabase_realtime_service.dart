@@ -80,6 +80,10 @@ class SupabaseRealtimeService {
   void _initAuthListener() {
     if (!isReady) return;
     try {
+      final initialToken = _client.auth.currentSession?.accessToken;
+      if (initialToken != null) {
+        _client.realtime.setAuth(initialToken);
+      }
       _client.auth.onAuthStateChange.listen((data) {
         final session = data.session;
         final token = session?.accessToken;

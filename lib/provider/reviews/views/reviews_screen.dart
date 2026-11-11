@@ -4,13 +4,13 @@ import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/theme/app_text_styles.dart';
 import 'package:khadematy_web/core/widgets/custom_button.dart';
-import 'package:khadematy_web/core/widgets/custom_card.dart';
 import 'package:khadematy_web/core/widgets/custom_text_field.dart';
 import 'package:khadematy_web/provider/reviews/models/review_model.dart';
 import 'package:khadematy_web/provider/reviews/providers/reviews_provider.dart';
 import 'package:khadematy_web/provider/shell/views/provider_page_header_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_metric_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_stats_row.dart';
+import 'package:khadematy_web/provider/shell/views/provider_filter_chip.dart';
 
 class ReviewsScreen extends StatefulWidget {
   const ReviewsScreen({super.key});
@@ -400,132 +400,160 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
 
   Widget _buildRatingBreakdownAndFilters(
       BuildContext context, ReviewsProvider provider) {
-    return CustomCard(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Filter Chips and Search
-          Row(
-            children: [
-              Expanded(
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    _buildFilterChip(
-                      label: 'كافة التقييمات (${provider.totalReviewsCount})',
-                      isSelected: provider.ratingFilter == null &&
-                          provider.replyFilter == ReviewReplyFilter.all,
-                      onTap: () {
-                        provider.setRatingFilter(null);
-                        provider.setReplyFilter(ReviewReplyFilter.all);
-                        setState(() => _currentPage = 1);
-                      },
-                    ),
-                    _buildFilterChip(
-                      label: '★ 5 نجوم (${provider.fiveStarCount})',
-                      isSelected: provider.ratingFilter == 5.0,
-                      onTap: () {
-                        provider.setRatingFilter(
-                            provider.ratingFilter == 5.0 ? null : 5.0);
-                        setState(() => _currentPage = 1);
-                      },
-                    ),
-                    _buildFilterChip(
-                      label: '★ 4 نجوم (${provider.fourStarCount})',
-                      isSelected: provider.ratingFilter == 4.0,
-                      onTap: () {
-                        provider.setRatingFilter(
-                            provider.ratingFilter == 4.0 ? null : 4.0);
-                        setState(() => _currentPage = 1);
-                      },
-                    ),
-                    _buildFilterChip(
-                      label:
-                          '★ 3 نجوم فما دون (${provider.threeStarCount + provider.twoStarCount + provider.oneStarCount})',
-                      isSelected: provider.ratingFilter == 3.0,
-                      onTap: () {
-                        provider.setRatingFilter(
-                            provider.ratingFilter == 3.0 ? null : 3.0);
-                        setState(() => _currentPage = 1);
-                      },
-                    ),
-                    _buildFilterChip(
-                      label: 'بانتظار الرد (${provider.pendingRepliesCount})',
-                      isSelected:
-                          provider.replyFilter == ReviewReplyFilter.pending,
-                      color: AppColors.burgundy,
-                      onTap: () {
-                        if (provider.replyFilter == ReviewReplyFilter.pending) {
-                          provider.setReplyFilter(ReviewReplyFilter.all);
-                        } else {
-                          provider.setReplyFilter(ReviewReplyFilter.pending);
-                        }
-                        setState(() => _currentPage = 1);
-                      },
-                    ),
-                    _buildFilterChip(
-                      label: 'تم الرد عليها',
-                      isSelected:
-                          provider.replyFilter == ReviewReplyFilter.replied,
-                      color: AppColors.success,
-                      onTap: () {
-                        if (provider.replyFilter == ReviewReplyFilter.replied) {
-                          provider.setReplyFilter(ReviewReplyFilter.all);
-                        } else {
-                          provider.setReplyFilter(ReviewReplyFilter.replied);
-                        }
-                        setState(() => _currentPage = 1);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+    return Wrap(
+      spacing: 12,
+      runSpacing: 10,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _buildFilterChip(
+          label: 'كافة التقييمات (${provider.totalReviewsCount})',
+          isSelected: provider.ratingFilter == null &&
+              provider.replyFilter == ReviewReplyFilter.all,
+          onTap: () {
+            provider.setRatingFilter(null);
+            provider.setReplyFilter(ReviewReplyFilter.all);
+            setState(() => _currentPage = 1);
+          },
+        ),
+        _buildFilterChip(
+          label: '★ 5 نجوم (${provider.fiveStarCount})',
+          isSelected: provider.ratingFilter == 5.0,
+          onTap: () {
+            provider.setRatingFilter(
+                provider.ratingFilter == 5.0 ? null : 5.0);
+            setState(() => _currentPage = 1);
+          },
+        ),
+        _buildFilterChip(
+          label: '★ 4 نجوم (${provider.fourStarCount})',
+          isSelected: provider.ratingFilter == 4.0,
+          onTap: () {
+            provider.setRatingFilter(
+                provider.ratingFilter == 4.0 ? null : 4.0);
+            setState(() => _currentPage = 1);
+          },
+        ),
+        _buildFilterChip(
+          label:
+              '★ 3 نجوم فما دون (${provider.threeStarCount + provider.twoStarCount + provider.oneStarCount})',
+          isSelected: provider.ratingFilter == 3.0,
+          onTap: () {
+            provider.setRatingFilter(
+                provider.ratingFilter == 3.0 ? null : 3.0);
+            setState(() => _currentPage = 1);
+          },
+        ),
+        _buildFilterChip(
+          label: 'بانتظار الرد (${provider.pendingRepliesCount})',
+          isSelected: provider.replyFilter == ReviewReplyFilter.pending,
+          color: const Color(0xFFD97706),
+          onTap: () {
+            if (provider.replyFilter == ReviewReplyFilter.pending) {
+              provider.setReplyFilter(ReviewReplyFilter.all);
+            } else {
+              provider.setReplyFilter(ReviewReplyFilter.pending);
+            }
+            setState(() => _currentPage = 1);
+          },
+        ),
+        _buildFilterChip(
+          label: 'تم الرد عليها',
+          isSelected: provider.replyFilter == ReviewReplyFilter.replied,
+          color: AppColors.success,
+          onTap: () {
+            if (provider.replyFilter == ReviewReplyFilter.replied) {
+              provider.setReplyFilter(ReviewReplyFilter.all);
+            } else {
+              provider.setReplyFilter(ReviewReplyFilter.replied);
+            }
+            setState(() => _currentPage = 1);
+          },
+        ),
+        SizedBox(width: 10,),
 
-          // Service Dropdown Filter (if there are multiple services)
-          if (provider.availableServicesWithReviews.length > 1) ...[
-            const SizedBox(height: 16),
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            Row(
+        // Service Dropdown Filter (inline next to "تم الرد عليها")
+        if (provider.availableServicesWithReviews.length > 1)
+          Container(
+            height: 41,
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            decoration: BoxDecoration(
+              color: AppColors.cardBg,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: provider.selectedServiceId != null
+                    ? AppColors.primary
+                    : AppColors.borderDark,
+                width: provider.selectedServiceId != null ? 1.5 : 1.2,
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text('تصفية حسب الخدمة: ',
-                    style: AppTextStyles.labelSmall
-                        .copyWith(color: AppColors.textSecondary)),
-                const SizedBox(width: 8),
-                DropdownButton<String?>(
-                  value: provider.selectedServiceId,
-                  underline: const SizedBox.shrink(),
-                  isDense: true,
-                  hint: Text('جميع الخدمات', style: AppTextStyles.labelSmall),
-                  items: [
-                    DropdownMenuItem<String?>(
-                      value: null,
-                      child:
-                          Text('جميع الخدمات', style: AppTextStyles.labelSmall),
+                // Text(
+                //   'تصفية حسب الخدمة: ',
+                //   style: GoogleFonts.cairo(
+                //     fontSize: 12,
+                //     fontWeight: FontWeight.w700,
+                //     color: AppColors.textSecondary,
+                //   ),
+                // ),
+                DropdownButtonHideUnderline(
+                  child: DropdownButton<String?>(
+                    value: provider.selectedServiceId,
+                    isDense: true,
+                    icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                        size: 18, color:AppColors.primary ),
+                    style: GoogleFonts.cairo(
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF4A3E44),
                     ),
-                    ...provider.availableServicesWithReviews.map(
-                      (s) => DropdownMenuItem<String?>(
-                        value: s['id'],
-                        child:
-                            Text(s['name']!, style: AppTextStyles.labelSmall),
+                    hint: Text(
+                      'جميع الخدمات',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF4A3E44),
                       ),
                     ),
-                  ],
-                  onChanged: (val) {
-                    provider.setServiceFilter(val);
-                    setState(() => _currentPage = 1);
-                  },
+                    items: [
+                      DropdownMenuItem<String?>(
+                        value: null,
+                        child: Text(
+                          'جميع الخدمات',
+                          style: GoogleFonts.cairo(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      ...provider.availableServicesWithReviews.map(
+                        (s) => DropdownMenuItem<String?>(
+                          value: s['id'],
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(maxWidth: 160),
+                            child: Text(
+                              s['name']!,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.cairo(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      provider.setServiceFilter(val);
+                      setState(() => _currentPage = 1);
+                    },
+                  ),
                 ),
               ],
             ),
-          ],
-        ],
-      ),
+          ),
+      ],
     );
   }
 
@@ -535,38 +563,11 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
     required VoidCallback onTap,
     Color? color,
   }) {
-    final activeColor = color ?? AppColors.burgundy;
-
-    return InkWell(
+    return ProviderFilterChip(
+      label: label,
+      isSelected: isSelected,
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-        decoration: BoxDecoration(
-          color: isSelected ? activeColor : AppColors.cardBg,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? activeColor : AppColors.border,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: activeColor.withOpacity(0.2),
-                    blurRadius: 6,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Text(
-          label,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: isSelected ? Colors.white : AppColors.textPrimary,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-          ),
-        ),
-      ),
+      activeColor: color,
     );
   }
 

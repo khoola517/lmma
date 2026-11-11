@@ -291,7 +291,7 @@ class _AddEditServiceScreenState extends State<AddEditServiceScreen> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.arrow_back,
-                          color: AppColors.textPrimary),
+                          color: AppColors.burgundy),
                       onPressed: widget.onCancel,
                       tooltip: 'العودة لخدماتي',
                     ),

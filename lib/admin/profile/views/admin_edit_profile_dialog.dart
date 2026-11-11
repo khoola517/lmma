@@ -333,31 +333,36 @@ class _AdminEditProfileDialogState extends State<AdminEditProfileDialog> {
         ),
       ),
       actions: [
-        TextButton(
+        
+        Row(
+          children: [
+            TextButton(
           onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
           child: Text(
             'إلغاء',
             style: GoogleFonts.cairo(color: AppColors.textSecondary),
           ),
         ),
-        ElevatedButton(
-          onPressed: _isSaving ? null : _saveProfile,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.burgundy,
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-          ),
-          child: _isSaving
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                )
-              : Text(
-                  'حفظ التعديلات',
-                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
-                ),
+            ElevatedButton(
+              onPressed: _isSaving ? null : _saveProfile,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.burgundy,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+              child: _isSaving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : Text(
+                      'حفظ التعديلات',
+                      style: GoogleFonts.cairo(fontWeight: FontWeight.bold),
+                    ),
+            ),
+          ],
         ),
       ],
     );

@@ -7,6 +7,7 @@ import 'package:khadematy_web/provider/bookings/models/confirmed_booking_model.d
 import 'package:khadematy_web/provider/shell/views/provider_page_header_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_metric_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_stats_row.dart';
+import 'package:khadematy_web/provider/shell/views/provider_filter_chip.dart';
 import 'package:khadematy_web/provider/bookings/providers/bookings_provider.dart';
 import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
 import 'booking_details_drawer.dart';
@@ -196,36 +197,46 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
               GoogleFonts.cairo(fontSize: 13.5, color: const Color(0xFF6B7280)),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'تراجع',
-              style: GoogleFonts.cairo(color: const Color(0xFF6B7280)),
-            ),
-          ),
-          CustomButton(
-            text: 'تأكيد الإلغاء',
-            variant: ButtonVariant.danger,
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final success = await provider.updateBookingStatus(
-                booking.id,
-                ConfirmedBookingStatus.cancelled,
-              );
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'تم إلغاء الحجز #${booking.bookingNumber}'
-                          : 'تعذر إلغاء الحجز',
-                      style: GoogleFonts.cairo(),
-                    ),
-                    backgroundColor: AppColors.error,
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'تراجع',
+                  style: GoogleFonts.cairo(
+                    color: const Color(0xFF6B7280),
+                    fontWeight: FontWeight.w600,
                   ),
-                );
-              }
-            },
+                ),
+              ),
+              const SizedBox(width: 8),
+              CustomButton(
+                text: 'تأكيد الإلغاء',
+                variant: ButtonVariant.danger,
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final success = await provider.updateBookingStatus(
+                    booking.id,
+                    ConfirmedBookingStatus.cancelled,
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'تم إلغاء الحجز #${booking.bookingNumber}'
+                              : 'تعذر إلغاء الحجز',
+                          style: GoogleFonts.cairo(),
+                        ),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -682,15 +693,14 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
       builder: (context, constraints) {
         final isNarrow = constraints.maxWidth < 920;
 
-        final timePills = Row(
-          mainAxisSize: MainAxisSize.min,
+        final timePills = Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             _buildTimePill('جميع الحجوزات المؤكدة', 'all'),
-            const SizedBox(width: 8),
             _buildTimePill('اليوم', 'today'),
-            const SizedBox(width: 8),
             _buildTimePill('هذا الأسبوع', 'week'),
-            const SizedBox(width: 8),
             _buildTimePill('هذا الشهر', 'month'),
           ],
         );
@@ -698,63 +708,29 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
         final filterControls = Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Search Input
-            // SizedBox(
-            //   width: 240,
-            //   height: 40,
-            //   child: TextField(
-            //     controller: _searchController,
-            //     onChanged: (_) => setState(() => _currentPage = 1),
-            //     style: GoogleFonts.cairo(fontSize: 12.5),
-            //     decoration: InputDecoration(
-            //       hintText: 'بحث سريع بالاسم، الرقم...',
-            //       hintStyle: GoogleFonts.cairo(
-            //         fontSize: 12,
-            //         color: const Color(0xFF9CA3AF),
-            //       ),
-            //       prefixIcon: const Icon(Icons.search,
-            //           size: 18, color: Color(0xFF9CA3AF)),
-            //       filled: true,
-            //       fillColor: const Color(0xFFFAF8F5),
-            //       contentPadding:
-            //           const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            //       border: OutlineInputBorder(
-            //         borderRadius: BorderRadius.circular(10),
-            //         borderSide: const BorderSide(color: Color(0xFFEBE6DF)),
-            //       ),
-            //       enabledBorder: OutlineInputBorder(
-            //         borderRadius: BorderRadius.circular(10),
-            //         borderSide: const BorderSide(color: Color(0xFFEBE6DF)),
-            //       ),
-            //       focusedBorder: OutlineInputBorder(
-            //         borderRadius: BorderRadius.circular(10),
-            //         borderSide:
-            //             const BorderSide(color: Color(0xFF681729), width: 1.2),
-            //       ),
-            //     ),
-            //   ),
-            // ),
-
-            // const SizedBox(width: 10),
-
             // Service Dropdown
             Container(
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              height: 41,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: const Color(0xFFFAF8F5),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFEBE6DF)),
+                color: AppColors.cardBg,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: _selectedService != 'all'
+                      ? AppColors.primary
+                      : AppColors.borderDark,
+                  width: _selectedService != 'all' ? 1.5 : 1.2,
+                ),
               ),
               child: DropdownButtonHideUnderline(
                 child: DropdownButton<String>(
                   value: _selectedService,
                   icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 18, color: Color(0xFF8A7F84)),
+                      size: 18, color: Color(0xFF4A3E44)),
                   style: GoogleFonts.cairo(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w600,
-                    color: const Color(0xFF2E2527),
+                    color: const Color(0xFF4A3E44),
                   ),
                   onChanged: (val) {
                     if (val != null) {
@@ -813,30 +789,41 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
                   });
                 }
               },
-              borderRadius: BorderRadius.circular(10),
-              child: Container(
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+              borderRadius: BorderRadius.circular(24),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                 decoration: BoxDecoration(
                   color: _selectedDate != null
-                      ? const Color(0xFFFBEAEA)
-                      : const Color(0xFFFAF8F5),
-                  borderRadius: BorderRadius.circular(10),
+                      ? AppColors.primary
+                      : AppColors.cardBg,
+                  borderRadius: BorderRadius.circular(24),
                   border: Border.all(
                     color: _selectedDate != null
-                        ? const Color(0xFF681729)
-                        : const Color(0xFFEBE6DF),
+                        ? AppColors.primary
+                        : AppColors.borderDark,
+                    width: _selectedDate != null ? 1.5 : 1.2,
                   ),
+                  boxShadow: _selectedDate != null
+                      ? [
+                          BoxShadow(
+                            color: AppColors.primary.withOpacity(0.3),
+                            blurRadius: 6,
+                            offset: const Offset(0, 2),
+                          ),
+                        ]
+                      : null,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.calendar_today_outlined,
-                      size: 16,
+                      size: 15,
                       color: _selectedDate != null
-                          ? const Color(0xFF681729)
-                          : const Color(0xFF8A7F84),
+                          ? Colors.white
+                          : const Color(0xFF4A3E44),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -844,19 +831,24 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
                           ? _formatArabicDate(_selectedDate!.toIso8601String())
                           : 'تاريخ المناسبة',
                       style: GoogleFonts.cairo(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
+                        fontSize: 12.5,
+                        fontWeight: _selectedDate != null
+                            ? FontWeight.w800
+                            : FontWeight.w600,
                         color: _selectedDate != null
-                            ? const Color(0xFF681729)
-                            : const Color(0xFF4B5563),
+                            ? Colors.white
+                            : const Color(0xFF4A3E44),
                       ),
                     ),
                     if (_selectedDate != null) ...[
                       const SizedBox(width: 6),
                       GestureDetector(
-                        onTap: () => setState(() => _selectedDate = null),
+                        onTap: () => setState(() {
+                          _selectedDate = null;
+                          _currentPage = 1;
+                        }),
                         child: const Icon(Icons.close,
-                            size: 14, color: Color(0xFF681729)),
+                            size: 14, color: Colors.white),
                       ),
                     ],
                   ],
@@ -870,10 +862,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: timePills,
-              ),
+              timePills,
               const SizedBox(height: 12),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -885,8 +874,10 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            timePills,
+            Expanded(child: timePills),
+            const SizedBox(width: 12),
             filterControls,
           ],
         );
@@ -895,36 +886,15 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
   }
 
   Widget _buildTimePill(String title, String key) {
-    final isSelected = _selectedTimeRange == key;
-    return InkWell(
+    return ProviderFilterChip(
+      label: title,
+      isSelected: _selectedTimeRange == key,
       onTap: () {
         setState(() {
           _selectedTimeRange = key;
           _currentPage = 1;
         });
       },
-      borderRadius: BorderRadius.circular(10),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFFCC201) : AppColors.cardBg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color:
-                isSelected ? const Color(0xFFFCC201) : const Color(0xFFE5E7EB),
-            width: 1.1,
-          ),
-        ),
-        child: Text(
-          title,
-          style: GoogleFonts.cairo(
-            fontSize: 12.5,
-            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
-            color: isSelected ? Colors.white : const Color(0xFF4B5563),
-          ),
-        ),
-      ),
     );
   }
 

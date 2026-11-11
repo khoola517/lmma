@@ -42,6 +42,7 @@ class ProviderHeader extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 380),
               height: 42,
               decoration: BoxDecoration(
+                
                 color: AppColors.cardBg,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),

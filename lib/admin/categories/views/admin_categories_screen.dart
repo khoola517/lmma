@@ -995,8 +995,8 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 1. Header Row (Title, Subtitle & Add Button)
-          _buildHeaderRow(),
+          // 1. Header Row (Title, Subtitle & Add Category Button inside Card)
+          _buildHeaderRow(context, adminData),
 
           const SizedBox(height: 24),
 
@@ -1017,14 +1017,34 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
     );
   }
 
-  // 1. Header Banner Card
-  Widget _buildHeaderRow() {
-    return const AdminPageHeaderCard(
+  // 1. Header Banner Card with Add Category Button
+  Widget _buildHeaderRow(BuildContext context, AdminDashboardProvider adminData) {
+    return AdminPageHeaderCard(
       title: 'إدارة التصنيفات',
       subtitle:
           'تنظيم، ضبط، وإسناد الخدمات والمقدمين ضمن منظومة الفعاليات الحصرية',
       icon: Icons.category_outlined,
-      //breadcrumb: 'لوحة التحكم / التصنيفات',
+      action: ElevatedButton.icon(
+        onPressed: () => _showAddCategoryDialog(context, adminData),
+        icon: const Icon(Icons.add_rounded, size: 20, color: Colors.white),
+        label: Text(
+          'إضافة تصنيف جديد',
+          style: GoogleFonts.cairo(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 13.5,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primaryDark,
+          foregroundColor: Colors.white,
+          elevation: 3,
+          shadowColor: AppColors.primaryDark.withOpacity(0.35),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ),
     );
   }
 
@@ -1067,96 +1087,71 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
     );
   }
 
-  // 3. Status Filter Bar & Actions
+  // 3. Status Filter Bar
   Widget _buildFilterBar(
       BuildContext context, AdminDashboardProvider adminData) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        
-
-        // Status Filter Dropdown
-        Container(
-          height: 44,
-          padding: const EdgeInsets.symmetric(horizontal: 14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFEFE9E0)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.015),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.filter_alt_outlined,
-                  size: 18, color: AppColors.burgundy),
-              const SizedBox(width: 8),
-              Text(
-                'تصفية الحالة:',
-                style: GoogleFonts.cairo(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF4B5563)),
-              ),
-              const SizedBox(width: 8),
-              DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedStatusFilter,
-                  icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                      size: 18, color: Color(0xFF8A7F84)),
-                  style: GoogleFonts.cairo(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF2E2527),
-                  ),
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'جميع الحالات (الكل)',
-                        child: Text('جميع الحالات (الكل)')),
-                    DropdownMenuItem(
-                        value: 'نشط فقط', child: Text('نشط فقط (المفعلة)')),
-                    DropdownMenuItem(
-                        value: 'معطل فقط', child: Text('معطل فقط (المؤرشفة)')),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        _selectedStatusFilter = val;
-                      });
-                    }
-                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Add Category Button
-        ElevatedButton.icon(
-          onPressed: () => _showAddCategoryDialog(context, adminData),
-          icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white),
-          label: Text(
-            'إضافة تصنيف جديد',
-            style: GoogleFonts.cairo(
-              color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFEFE9E0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.015),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
-          ),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.burgundy,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            elevation: 2,
-          ),
+          ],
         ),
-      ],
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.filter_alt_outlined,
+                size: 18, color: AppColors.burgundy),
+            const SizedBox(width: 8),
+            Text(
+              'تصفية الحالة:',
+              style: GoogleFonts.cairo(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFF4B5563)),
+            ),
+            const SizedBox(width: 8),
+            DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedStatusFilter,
+                icon: const Icon(Icons.keyboard_arrow_down_rounded,
+                    size: 18, color: Color(0xFF8A7F84)),
+                style: GoogleFonts.cairo(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: const Color(0xFF2E2527),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                      value: 'جميع الحالات (الكل)',
+                      child: Text('جميع الحالات (الكل)')),
+                  DropdownMenuItem(
+                      value: 'نشط فقط', child: Text('نشط فقط (المفعلة)')),
+                  DropdownMenuItem(
+                      value: 'معطل فقط', child: Text('معطل فقط (المؤرشفة)')),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() {
+                      _selectedStatusFilter = val;
+                    });
+                  }
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

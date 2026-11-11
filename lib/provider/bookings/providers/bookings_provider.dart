@@ -16,6 +16,7 @@ class BookingsProvider extends ChangeNotifier {
   String? _errorMessage;
   String? _lastLoadedProviderId;
   String? _activeActionBookingId;
+  int _defaultResponseHours = 24;
   final List<RealtimeSubscriptionToken> _realtimeTokens = [];
 
   BookingsProvider() {
@@ -69,7 +70,15 @@ class BookingsProvider extends ChangeNotifier {
   String get requestSearchQuery => _requestSearchQuery;
   String? get activeActionBookingId => _activeActionBookingId;
   String? get lastLoadedProviderId => _lastLoadedProviderId;
+  int get defaultResponseHours => _defaultResponseHours;
   bool isActionLoading(String id) => _activeActionBookingId == id;
+
+  void setDefaultResponseHours(int hours) {
+    if (_defaultResponseHours != hours) {
+      _defaultResponseHours = hours;
+      loadBookings(providerId: _lastLoadedProviderId, force: true);
+    }
+  }
 
   // Booking Requests
   List<BookingRequestModel> get pendingRequests {
@@ -163,11 +172,15 @@ class BookingsProvider extends ChangeNotifier {
           try {
             final prov = await SupabaseConfig.client
                 .from('provider_profiles')
-                .select('id')
+                .select()
                 .eq('user_id', user.id)
                 .maybeSingle();
             if (prov != null) {
               resolvedProviderId = prov['id'] as String?;
+              final settingsMap = prov['settings'] as Map<String, dynamic>?;
+              if (settingsMap != null && settingsMap['default_response_hours'] != null) {
+                _defaultResponseHours = (settingsMap['default_response_hours'] as num).toInt();
+              }
             }
           } catch (e) {
             debugPrint('Note: Error fetching provider profile for user: $e');
@@ -242,7 +255,11 @@ class BookingsProvider extends ChangeNotifier {
         final statusStr = (raw['status'] as String? ?? 'pending').toLowerCase();
         if (statusStr == 'pending') {
           requests.add(
-            BookingRequestModel.fromJson(raw, targetProviderId: resolvedProviderId),
+            BookingRequestModel.fromJson(
+              raw,
+              targetProviderId: resolvedProviderId,
+              defaultResponseHours: _defaultResponseHours,
+            ),
           );
         } else {
           confirmed.add(
@@ -302,22 +319,6 @@ class BookingsProvider extends ChangeNotifier {
           'status': 'confirmed',
           'updated_at': nowIso,
         }).eq('id', requestId);
-
-        // إشعار العميل (اختياري)
-        if (targetReq != null && targetReq.customerId != null) {
-          try {
-            await SupabaseConfig.client.from('notifications').insert({
-              'user_id': targetReq.customerId,
-              'title': 'تم تأكيد حجزك بنجاح',
-              'body': 'وافق مقدم الخدمة على حجزك رقم #${targetReq.code}',
-              'type': 'booking_confirmed',
-              'related_booking_id': requestId,
-              'created_at': nowIso,
-            });
-          } catch (ne) {
-            debugPrint('Note: Notification insert note: $ne');
-          }
-        }
       }
 
       // 2. تحديث الحالة محلياً فور نجاح الخادم
@@ -396,21 +397,6 @@ class BookingsProvider extends ChangeNotifier {
           'status': 'cancelled',
           'updated_at': nowIso,
         }).eq('id', requestId);
-
-        if (req != null && req.customerId != null) {
-          try {
-            await SupabaseConfig.client.from('notifications').insert({
-              'user_id': req.customerId,
-              'title': 'تم الاعتذار عن طلب الحجز',
-              'body': 'اعتذر مقدم الخدمة عن طلب الحجز رقم #${req.code}${reason != null && reason.isNotEmpty ? ': $reason' : ''}',
-              'type': 'booking_cancelled',
-              'related_booking_id': requestId,
-              'created_at': nowIso,
-            });
-          } catch (ne) {
-            debugPrint('Note: Notification insert error on reject: $ne');
-          }
-        }
       }
 
       // 2. تحديث الحالة محلياً فور نجاح الخادم
@@ -498,38 +484,6 @@ class BookingsProvider extends ChangeNotifier {
             'item_status': 'rejected',
             'responded_at': nowIso,
           }).eq('booking_id', bookingId);
-        }
-
-        final targetIndex = _confirmedBookings.indexWhere((b) => b.id == bookingId);
-        final target = targetIndex != -1 ? _confirmedBookings[targetIndex] : null;
-        if (target != null && target.customerId != null && target.customerId!.isNotEmpty) {
-          try {
-            String statusTitle = 'تحديث في حالة الحجز';
-            String statusDesc = 'تم تحديث حالة حجزك رقم #${target.bookingNumber} إلى ';
-            switch (status) {
-              case ConfirmedBookingStatus.inProgress:
-                statusDesc += 'قيد التنفيذ حالياً';
-                break;
-              case ConfirmedBookingStatus.completed:
-                statusTitle = 'اكتملت الخدمة بنجاح';
-                statusDesc += 'مكتمل بنجاح، شكراً لاختياركم خِدمتي';
-                break;
-              case ConfirmedBookingStatus.cancelled:
-                statusTitle = 'إلغاء الحجز';
-                statusDesc += 'ملغي';
-                break;
-              default:
-                statusDesc += 'مؤكد';
-            }
-            await SupabaseConfig.client.from('notifications').insert({
-              'user_id': target.customerId,
-              'title': statusTitle,
-              'body': statusDesc,
-              'type': 'booking_status_updated',
-              'related_booking_id': bookingId,
-              'created_at': nowIso,
-            });
-          } catch (_) {}
         }
       }
 

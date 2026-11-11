@@ -675,19 +675,20 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
 
           // 3. Filter Bar (3 Dropdowns matching the image)
           Container(
+            
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            // decoration: BoxDecoration(
-            //   color: Colors.white,
-            //   borderRadius: BorderRadius.circular(16),
-            //   border: Border.all(color: const Color(0xFFEBE6DF)),
-            //   boxShadow: [
-            //     BoxShadow(
-            //       color: Colors.black.withOpacity(0.02),
-            //       blurRadius: 10,
-            //       offset: const Offset(0, 3),
-            //     ),
-            //   ],
-            // ),
+          //   decoration: BoxDecoration(
+          //  color: AppColors.creamBg
+              // borderRadius: BorderRadius.circular(16),
+              // border: Border.all(color: const Color(0xFFEBE6DF)),
+              // boxShadow: [
+              //   BoxShadow(
+              //     color: Colors.black.withOpacity(0.02),
+              //     blurRadius: 10,
+              //     offset: const Offset(0, 3),
+              //   ),
+              // ],
+            //),
             child: Row(
               children: [
                 // Dropdown 1: Star Filter (Right)

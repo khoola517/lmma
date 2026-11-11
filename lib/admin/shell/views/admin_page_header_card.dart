@@ -7,6 +7,7 @@ class AdminPageHeaderCard extends StatelessWidget {
   final String subtitle;
   final IconData? icon;
   final Widget? trailing;
+  final Widget? action;
   final Widget? badge;
   final String? breadcrumb;
 
@@ -16,6 +17,7 @@ class AdminPageHeaderCard extends StatelessWidget {
     required this.subtitle,
     this.icon,
     this.trailing,
+    this.action,
     this.badge,
     this.breadcrumb,
   });
@@ -111,14 +113,16 @@ class AdminPageHeaderCard extends StatelessWidget {
             ],
           );
 
+          final actionWidget = action ?? trailing;
+
           if (isNarrow) {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 contentColumn,
-                if (trailing != null) ...[
+                if (actionWidget != null) ...[
                   const SizedBox(height: 14),
-                  trailing!,
+                  actionWidget,
                 ],
               ],
             );
@@ -129,9 +133,9 @@ class AdminPageHeaderCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               Expanded(child: contentColumn),
-              if (trailing != null) ...[
+              if (actionWidget != null) ...[
                 const SizedBox(width: 16),
-                trailing!,
+                actionWidget,
               ],
             ],
           );

@@ -1,3 +1,5 @@
+import 'package:khadematy_web/provider/settings/models/provider_settings_model.dart';
+
 class ProviderProfileModel {
   String? id;
   String? userId;
@@ -11,6 +13,7 @@ class ProviderProfileModel {
   bool isVerified;
   double overallRating;
   int completedBookingsCount;
+  ProviderSettingsModel settings;
 
   ProviderProfileModel({
     this.id,
@@ -25,6 +28,7 @@ class ProviderProfileModel {
     this.isVerified = true,
     this.overallRating = 5.0,
     this.completedBookingsCount = 0,
+    this.settings = const ProviderSettingsModel(),
   });
 
   factory ProviderProfileModel.fromSupabase({
@@ -38,6 +42,8 @@ class ProviderProfileModel {
     final resolvedCategory = (providerProfile['category'] as String?)?.isNotEmpty == true
         ? providerProfile['category'] as String
         : (categoryName?.isNotEmpty == true ? categoryName! : 'تنظيم وتنسيق الحفلات');
+
+    final rawSettings = providerProfile['settings'] as Map<String, dynamic>?;
 
     return ProviderProfileModel(
       id: providerProfile['id'] as String?,
@@ -55,6 +61,7 @@ class ProviderProfileModel {
       isVerified: status == 'approved',
       overallRating: rating ?? 5.0,
       completedBookingsCount: completedCount ?? 0,
+      settings: ProviderSettingsModel.fromJson(rawSettings),
     );
   }
 
@@ -71,6 +78,7 @@ class ProviderProfileModel {
     bool? isVerified,
     double? overallRating,
     int? completedBookingsCount,
+    ProviderSettingsModel? settings,
   }) {
     return ProviderProfileModel(
       id: id ?? this.id,
@@ -85,6 +93,7 @@ class ProviderProfileModel {
       isVerified: isVerified ?? this.isVerified,
       overallRating: overallRating ?? this.overallRating,
       completedBookingsCount: completedBookingsCount ?? this.completedBookingsCount,
+      settings: settings ?? this.settings,
     );
   }
 }
