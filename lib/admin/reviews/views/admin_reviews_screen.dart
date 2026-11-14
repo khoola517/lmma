@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
+import 'package:khadematy_web/core/widgets/table_pagination_bar.dart';
 import 'package:khadematy_web/admin/dashboard/providers/admin_dashboard_provider.dart';
 import 'package:khadematy_web/admin/shell/providers/admin_navigation_provider.dart';
+import 'package:khadematy_web/admin/shell/views/admin_filter_controls.dart';
 import 'package:khadematy_web/admin/shell/views/admin_page_header_card.dart';
 import 'package:khadematy_web/admin/shell/views/admin_stat_card.dart';
 
@@ -20,6 +23,9 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
   String _dateFilter = 'all'; // 'all', 'this_month', 'this_week'
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _horizontalScrollController = ScrollController();
+  int _currentPage = 1;
+  static const int _itemsPerPage = 5;
+  String _lastFilterKey = '';
 
   @override
   void initState() {
@@ -282,15 +288,15 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
                         ),
                         label: Text(
                           isHidden
-                              ? 'إظهار التقييم للمستخدمين'
-                              : 'إخفاء التقييم من المنصة',
-                          style: GoogleFonts.cairo(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: isHidden
-                                ? const Color(0xFF16A34A)
-                                : const Color(0xFFD97706),
-                          ),
+                              ? " "
+                              : " "
+                          // style: GoogleFonts.cairo(
+                          //   fontSize: 12,
+                          //   fontWeight: FontWeight.w700,
+                          //   color: isHidden
+                          //       ? const Color(0xFF16A34A)
+                          //       : const Color(0xFFD97706),
+                          // ),
                         ),
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(
@@ -327,48 +333,48 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
                       ),
                     ),
                     const SizedBox(width: 10),
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.delete_outline,
-                          size: 16, color: Color(0xFFE11D48)),
-                      label: Text(
-                        'حذف نهائي',
-                        style: GoogleFonts.cairo(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: const Color(0xFFE11D48),
-                        ),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                            color: const Color(0xFFE11D48).withOpacity(0.4)),
-                        backgroundColor:
-                            const Color(0xFFE11D48).withOpacity(0.06),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                      ),
-                      onPressed: () async {
-                        Navigator.pop(ctx);
-                        final ok = await context
-                            .read<AdminDashboardProvider>()
-                            .deleteReview(reviewId);
-                        if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                ok
-                                    ? 'تم حذف التقييم بنجاح من قاعدة البيانات'
-                                    : 'فشل حذف التقييم',
-                                style: GoogleFonts.cairo(),
-                              ),
-                              backgroundColor:
-                                  ok ? AppColors.success : AppColors.error,
-                            ),
-                          );
-                        }
-                      },
-                    ),
+                    // OutlinedButton.icon(
+                    //   icon: const Icon(Icons.delete_outline,
+                    //       size: 16, color: Color(0xFFE11D48)),
+                    //   label: Text(
+                    //     'حذف نهائي',
+                    //     style: GoogleFonts.cairo(
+                    //       fontSize: 12,
+                    //       fontWeight: FontWeight.w700,
+                    //       color: const Color(0xFFE11D48),
+                    //     ),
+                    //   ),
+                    //   style: OutlinedButton.styleFrom(
+                    //     side: BorderSide(
+                    //         color: const Color(0xFFE11D48).withOpacity(0.4)),
+                    //     backgroundColor:
+                    //         const Color(0xFFE11D48).withOpacity(0.06),
+                    //     padding: const EdgeInsets.symmetric(
+                    //         horizontal: 16, vertical: 12),
+                    //     shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(10)),
+                    //   ),
+                    //   onPressed: () async {
+                    //     Navigator.pop(ctx);
+                    //     final ok = await context
+                    //         .read<AdminDashboardProvider>()
+                    //         .deleteReview(reviewId);
+                    //     if (context.mounted) {
+                    //       ScaffoldMessenger.of(context).showSnackBar(
+                    //         SnackBar(
+                    //           content: Text(
+                    //             ok
+                    //                 ? 'تم حذف التقييم بنجاح من قاعدة البيانات'
+                    //                 : 'فشل حذف التقييم',
+                    //             style: GoogleFonts.cairo(),
+                    //           ),
+                    //           backgroundColor:
+                    //               ok ? AppColors.success : AppColors.error,
+                    //         ),
+                    //       );
+                    //     }
+                    //   },
+                    // ),
                   ],
                 ),
               ],
@@ -380,7 +386,7 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
           ElevatedButton(
             onPressed: () => Navigator.pop(ctx),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF681729),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10)),
@@ -431,39 +437,43 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
               fontSize: 13, color: const Color(0xFF6B7280)),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'تراجع',
-              style: GoogleFonts.cairo(color: const Color(0xFF6B7280)),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final ok = await context
-                  .read<AdminDashboardProvider>()
-                  .deleteReview(reviewId);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      ok ? 'تم حذف التقييم بنجاح' : 'فشل حذف التقييم',
-                      style: GoogleFonts.cairo(),
-                    ),
-                    backgroundColor: ok ? AppColors.success : AppColors.error,
-                  ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text('تأكيد الحذف',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'تراجع',
+                  style: GoogleFonts.cairo(color: const Color(0xFF6B7280)),
+                ),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final ok = await context
+                      .read<AdminDashboardProvider>()
+                      .deleteReview(reviewId);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          ok ? 'تم حذف التقييم بنجاح' : 'فشل حذف التقييم',
+                          style: GoogleFonts.cairo(),
+                        ),
+                        backgroundColor: ok ? AppColors.success : AppColors.error,
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text('تأكيد الحذف',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),
@@ -599,6 +609,20 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
       return true;
     }).toList();
 
+    final filterKey =
+        '$_starFilter|$_statusFilter|$_dateFilter|${_searchController.text}|$globalSearch';
+    if (filterKey != _lastFilterKey) {
+      _lastFilterKey = filterKey;
+      _currentPage = 1;
+    }
+
+    final pagination = PaginationSlice.fromList(
+      filteredReviews,
+      currentPage: _currentPage,
+      itemsPerPage: _itemsPerPage,
+    );
+    final pageReviews = pagination.pageItems;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
       child: Column(
@@ -673,127 +697,70 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
 
           const SizedBox(height: 24),
 
-          // 3. Filter Bar (3 Dropdowns matching the image)
-          Container(
-            
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          //   decoration: BoxDecoration(
-          //  color: AppColors.creamBg
-              // borderRadius: BorderRadius.circular(16),
-              // border: Border.all(color: const Color(0xFFEBE6DF)),
-              // boxShadow: [
-              //   BoxShadow(
-              //     color: Colors.black.withOpacity(0.02),
-              //     blurRadius: 10,
-              //     offset: const Offset(0, 3),
-              //   ),
-              // ],
-            //),
+          // 3. Unified Filter Bar (3 Dropdowns)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
               children: [
-                // Dropdown 1: Star Filter (Right)
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Text(
-                      //   'عدد النجوم',
-                      //   style: GoogleFonts.cairo(
-                      //     fontSize: 12,
-                      //     fontWeight: FontWeight.w700,
-                      //     color: const Color(0xFF8C7B83),
-                      //   ),
-                      // ),
-                      const SizedBox(height: 6),
-                      _buildFilterDropdown<int?>(
-                        value: _starFilter,
-                        items: const [
-                          DropdownMenuItem(
-                              value: null,
-                              child: Text('كافة التقييمات (الكل)')),
-                          DropdownMenuItem(
-                              value: 5, child: Text('5 نجوم ★★★★★')),
-                          DropdownMenuItem(
-                              value: 4, child: Text('4 نجوم ★★★★☆')),
-                          DropdownMenuItem(
-                              value: 3, child: Text('3 نجوم ★★★☆☆')),
-                          DropdownMenuItem(
-                              value: 2, child: Text('نجمتان أو أقل ★★☆☆☆')),
-                        ],
-                        onChanged: (val) => setState(() => _starFilter = val),
-                      ),
+                  child: AdminFilterDropdown<int?>(
+                    value: _starFilter,
+                    icon: Icons.star_outline_rounded,
+                    isActive: _starFilter != null,
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(
+                          value: null, child: Text('كافة التقييمات (الكل)')),
+                      DropdownMenuItem(value: 5, child: Text('5 نجوم ★★★★★')),
+                      DropdownMenuItem(value: 4, child: Text('4 نجوم ★★★★☆')),
+                      DropdownMenuItem(value: 3, child: Text('3 نجوم ★★★☆☆')),
+                      DropdownMenuItem(
+                          value: 2, child: Text('نجمتان أو أقل ★★☆☆☆')),
                     ],
+                    onChanged: (val) => setState(() => _starFilter = val),
                   ),
                 ),
-
-                const SizedBox(width: 16),
-
-                // Dropdown 2: Status Filter (Center)
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Text(
-                      //   'حالة التقييم',
-                      //   style: GoogleFonts.cairo(
-                      //     fontSize: 12,
-                      //     fontWeight: FontWeight.w700,
-                      //     color: const Color(0xFF8C7B83),
-                      //   ),
-                      // ),
-                      const SizedBox(height: 6),
-                      _buildFilterDropdown<String>(
-                        value: _statusFilter,
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'all', child: Text('كافة الحالات (الكل)')),
-                          DropdownMenuItem(
-                              value: 'visible',
-                              child: Text('التقييمات الظاهرة فقط')),
-                          DropdownMenuItem(
-                              value: 'hidden',
-                              child: Text('التقييمات المخفية فقط')),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setState(() => _statusFilter = val);
-                        },
-                      ),
+                  child: AdminFilterDropdown<String>(
+                    value: _statusFilter,
+                    icon: Icons.visibility_outlined,
+                    isActive: _statusFilter != 'all',
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'all', child: Text('كافة الحالات (الكل)')),
+                      DropdownMenuItem(
+                          value: 'visible',
+                          child: Text('التقييمات الظاهرة فقط')),
+                      DropdownMenuItem(
+                          value: 'hidden',
+                          child: Text('التقييمات المخفية فقط')),
                     ],
+                    onChanged: (val) {
+                      if (val != null) setState(() => _statusFilter = val);
+                    },
                   ),
                 ),
-
-                const SizedBox(width: 16),
-
-                // Dropdown 3: Date Filter (Left)
+                const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Text(
-                      //   'تاريخ التقييم',
-                      //   style: GoogleFonts.cairo(
-                      //     fontSize: 12,
-                      //     fontWeight: FontWeight.w700,
-                      //     color: const Color(0xFF8C7B83),
-                      //   ),
-                      // ),
-                      const SizedBox(height: 6),
-                      _buildFilterDropdown<String>(
-                        value: _dateFilter,
-                        items: const [
-                          DropdownMenuItem(
-                              value: 'all', child: Text('كافة الفترات')),
-                          DropdownMenuItem(
-                              value: 'this_month',
-                              child: Text('هذا الشهر (أكتوبر 2026)')),
-                          DropdownMenuItem(
-                              value: 'this_week', child: Text('آخر 7 أيام')),
-                        ],
-                        onChanged: (val) {
-                          if (val != null) setState(() => _dateFilter = val);
-                        },
-                      ),
+                  child: AdminFilterDropdown<String>(
+                    value: _dateFilter,
+                    icon: Icons.calendar_today_outlined,
+                    isActive: _dateFilter != 'all',
+                    isExpanded: true,
+                    items: const [
+                      DropdownMenuItem(
+                          value: 'all', child: Text('كافة الفترات')),
+                      DropdownMenuItem(
+                          value: 'this_month',
+                          child: Text('هذا الشهر (أكتوبر 2026)')),
+                      DropdownMenuItem(
+                          value: 'this_week', child: Text('آخر 7 أيام')),
                     ],
+                    onChanged: (val) {
+                      if (val != null) setState(() => _dateFilter = val);
+                    },
                   ),
                 ),
               ],
@@ -818,144 +785,132 @@ class _AdminReviewsScreenState extends State<AdminReviewsScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final tableWidth = constraints.maxWidth < 980
-                      ? 980.0
-                      : constraints.maxWidth;
-                  return Scrollbar(
-                    controller: _horizontalScrollController,
-                    thumbVisibility: constraints.maxWidth < 980,
-                    trackVisibility: constraints.maxWidth < 980,
-                    interactive: true,
-                    thickness: 7,
-                    radius: const Radius.circular(4),
-                    child: SingleChildScrollView(
-                      controller: _horizontalScrollController,
-                      scrollDirection: Axis.horizontal,
-                      physics: const BouncingScrollPhysics(),
-                      child: SizedBox(
-                        width: tableWidth,
-                        child: Column(
-                          children: [
-                            // Table Header Row
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 12),
-                              decoration: const BoxDecoration(
-                                color: Color(0xFFFAF8F5),
-                                border: Border(
-                                  bottom: BorderSide(color: Color(0xFFEBE6DF)),
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  _buildTableHeader('اسم العميل', flex: 15),
-                                  _buildTableHeader('اسم الخدمة', flex: 14),
-                                  _buildTableHeader('اسم مقدم الخدمة', flex: 14),
-                                  _buildTableHeader('عدد النجوم', flex: 10),
-                                  _buildTableHeader('التعليق', flex: 18),
-                                  _buildTableHeader('تاريخ التقييم', flex: 9),
-                                  _buildTableHeader('الحالة', flex: 9),
-                                  _buildTableHeader('الإجراءات',
-                                      flex: 11, textAlign: TextAlign.center),
-                                ],
-                              ),
-                            ),
-
-                            // Data Rows or Loading/Empty State
-                            if (adminData.isLoading && adminData.reviews.isEmpty)
-                              const Padding(
-                                padding: EdgeInsets.all(60),
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                      color: Color(0xFF681729)),
-                                ),
-                              )
-                            else if (filteredReviews.isEmpty)
-                              Padding(
-                                padding: const EdgeInsets.all(60),
-                                child: Center(
-                                  child: Column(
+              child: Column(
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final tableWidth = constraints.maxWidth < 980
+                          ? 980.0
+                          : constraints.maxWidth;
+                      return Scrollbar(
+                        controller: _horizontalScrollController,
+                        thumbVisibility: constraints.maxWidth < 980,
+                        trackVisibility: constraints.maxWidth < 980,
+                        interactive: true,
+                        thickness: 7,
+                        radius: const Radius.circular(4),
+                        child: SingleChildScrollView(
+                          controller: _horizontalScrollController,
+                          scrollDirection: Axis.horizontal,
+                          physics: const BouncingScrollPhysics(),
+                          child: SizedBox(
+                            width: tableWidth,
+                            child: Column(
+                              children: [
+                                // Table Header Row
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 14, vertical: 12),
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFFFAF8F5),
+                                    border: Border(
+                                      bottom:
+                                          BorderSide(color: Color(0xFFEBE6DF)),
+                                    ),
+                                  ),
+                                  child: Row(
                                     children: [
-                                      const Icon(Icons.star_border_rounded,
-                                          size: 48, color: Color(0xFFB0A4A7)),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        'لا توجد تقييمات مطابقة للفلاتر المحددة',
-                                        style: GoogleFonts.cairo(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          color: const Color(0xFF2D2327),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'جرب تغيير تصفية النجوم أو الحالة للاطلاع على التقييمات المسجلة.',
-                                        style: GoogleFonts.cairo(
-                                          fontSize: 13,
-                                          color: const Color(0xFF8C7B83),
-                                        ),
-                                      ),
+                                      _buildTableHeader('اسم العميل', flex: 15),
+                                      _buildTableHeader('اسم الخدمة', flex: 14),
+                                      _buildTableHeader('اسم مقدم الخدمة',
+                                          flex: 14),
+                                      _buildTableHeader('عدد النجوم', flex: 10),
+                                      _buildTableHeader('التعليق', flex: 18),
+                                      _buildTableHeader('تاريخ التقييم',
+                                          flex: 9),
+                                      _buildTableHeader('الحالة', flex: 9),
+                                      _buildTableHeader('الإجراءات',
+                                          flex: 11,
+                                          textAlign: TextAlign.center),
                                     ],
                                   ),
                                 ),
-                              )
-                            else
-                              ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: filteredReviews.length,
-                                separatorBuilder: (_, __) => const Divider(
-                                    height: 1, color: Color(0xFFEBE6DF)),
-                                itemBuilder: (context, index) {
-                                  final r = filteredReviews[index];
-                                  final isHidden = adminData
-                                      .isReviewHidden(r['id'].toString());
-                                  return _buildTableRow(
-                                      context, r, index, isHidden);
-                                },
-                              ),
-                          ],
+
+                                // Data Rows or Loading/Empty State
+                                if (adminData.isLoading &&
+                                    adminData.reviews.isEmpty)
+                                  const Padding(
+                                    padding: EdgeInsets.all(60),
+                                    child: Center(
+                                      child: CircularProgressIndicator(
+                                          color: Color(0xFF681729)),
+                                    ),
+                                  )
+                                else if (filteredReviews.isEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.all(60),
+                                    child: Center(
+                                      child: Column(
+                                        children: [
+                                          const Icon(Icons.star_border_rounded,
+                                              size: 48,
+                                              color: Color(0xFFB0A4A7)),
+                                          const SizedBox(height: 12),
+                                          Text(
+                                            'لا توجد تقييمات مطابقة للفلاتر المحددة',
+                                            style: GoogleFonts.cairo(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                              color: const Color(0xFF2D2327),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            'جرب تغيير تصفية النجوم أو الحالة للاطلاع على التقييمات المسجلة.',
+                                            style: GoogleFonts.cairo(
+                                              fontSize: 13,
+                                              color: const Color(0xFF8C7B83),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ListView.separated(
+                                    shrinkWrap: true,
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
+                                    itemCount: pageReviews.length,
+                                    separatorBuilder: (_, __) => const Divider(
+                                        height: 1, color: Color(0xFFEBE6DF)),
+                                    itemBuilder: (context, index) {
+                                      final r = pageReviews[index];
+                                      final isHidden = adminData
+                                          .isReviewHidden(r['id'].toString());
+                                      return _buildTableRow(
+                                          context, r, index, isHidden);
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
+                      );
+                    },
+                  ),
+                  if (pagination.totalFiltered > 0)
+                    TablePaginationBar(
+                      pagination: pagination,
+                      itemLabel: 'تقييم',
+                      onPageChanged: (page) =>
+                          setState(() => _currentPage = page),
                     ),
-                  );
-                },
+                ],
               ),
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildFilterDropdown<T>({
-    required T value,
-    required List<DropdownMenuItem<T>> items,
-    required ValueChanged<T?> onChanged,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFAF8F5),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFEBE6DF)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<T>(
-          value: value,
-          isExpanded: true,
-          style: GoogleFonts.cairo(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF2D2327),
-          ),
-          icon: const Icon(Icons.keyboard_arrow_down_rounded,
-              size: 20, color: Color(0xFF8C7B83)),
-          items: items,
-          onChanged: onChanged,
-        ),
       ),
     );
   }

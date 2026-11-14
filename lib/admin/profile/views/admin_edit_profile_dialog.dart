@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
 import 'package:khadematy_web/core/services/storage_service.dart';
 import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
 
@@ -333,16 +334,15 @@ class _AdminEditProfileDialogState extends State<AdminEditProfileDialog> {
         ),
       ),
       actions: [
-        
-        Row(
+        DialogActionsRow(
           children: [
             TextButton(
-          onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
-          child: Text(
-            'إلغاء',
-            style: GoogleFonts.cairo(color: AppColors.textSecondary),
-          ),
-        ),
+              onPressed: _isSaving ? null : () => Navigator.of(context).pop(false),
+              child: Text(
+                'إلغاء',
+                style: GoogleFonts.cairo(color: AppColors.textSecondary),
+              ),
+            ),
             ElevatedButton(
               onPressed: _isSaving ? null : _saveProfile,
               style: ElevatedButton.styleFrom(

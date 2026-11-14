@@ -337,36 +337,57 @@ class DashboardScreen extends StatelessWidget {
                           const SizedBox(height: 6),
                           Row(
                             children: [
-                              CustomButton(
-                                text: 'قبول',
-                                height: 32,
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 12),
-                                variant: ButtonVariant.primary,
-                                onPressed: () async {
-                                  final success = await bookingsProvider
-                                      .acceptBookingRequest(req.id);
-                                  if (context.mounted) {
-                                    if (success) {
-                                      context
-                                          .read<ProfileProvider>()
-                                          .incrementBookingsCount();
-                                    }
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text(
-                                          success
-                                              ? 'تم قبول حجز ${req.customerName} وتأكيده بنجاح'
-                                              : 'تعذر قبول الحجز، يرجى المحاولة لاحقاً',
+                              if (!req.isExpired)
+                                CustomButton(
+                                  text: 'قبول',
+                                  height: 32,
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 12),
+                                  variant: ButtonVariant.primary,
+                                  onPressed: () async {
+                                    final success = await bookingsProvider
+                                        .acceptBookingRequest(req.id);
+                                    if (context.mounted) {
+                                      if (success) {
+                                        context
+                                            .read<ProfileProvider>()
+                                            .incrementBookingsCount();
+                                      }
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            success
+                                                ? 'تم قبول حجز ${req.customerName} وتأكيده بنجاح'
+                                                : (bookingsProvider.errorMessage ??
+                                                    'تعذر قبول الحجز، يرجى المحاولة لاحقاً'),
+                                          ),
+                                          backgroundColor: success
+                                              ? AppColors.burgundy
+                                              : AppColors.error,
                                         ),
-                                        backgroundColor: success
-                                            ? AppColors.burgundy
-                                            : AppColors.error,
-                                      ),
-                                    );
-                                  }
-                                },
-                              ),
+                                      );
+                                    }
+                                  },
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.errorBg,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border:
+                                        Border.all(color: AppColors.errorBorder),
+                                  ),
+                                  child: Text(
+                                    'تجاوز المهلة',
+                                    style: AppTextStyles.labelSmall.copyWith(
+                                      color: AppColors.error,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                ),
                             ],
                           ),
                         ],

@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/widgets/custom_button.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
 import 'package:khadematy_web/provider/bookings/models/confirmed_booking_model.dart';
 import 'package:khadematy_web/provider/shell/views/provider_page_header_card.dart';
 import 'package:khadematy_web/provider/shell/views/provider_metric_card.dart';
@@ -197,9 +198,7 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
               GoogleFonts.cairo(fontSize: 13.5, color: const Color(0xFF6B7280)),
         ),
         actions: [
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.end,
+          DialogActionsRow(
             children: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
@@ -211,7 +210,6 @@ class _ConfirmedBookingsScreenState extends State<ConfirmedBookingsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
               CustomButton(
                 text: 'تأكيد الإلغاء',
                 variant: ButtonVariant.danger,

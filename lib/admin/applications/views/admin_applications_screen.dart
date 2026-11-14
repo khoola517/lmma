@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
+import 'package:khadematy_web/core/widgets/table_pagination_bar.dart';
 import 'package:khadematy_web/provider/auth/models/provider_application_model.dart';
 import 'package:khadematy_web/admin/dashboard/providers/admin_dashboard_provider.dart';
 import 'package:khadematy_web/admin/shell/providers/admin_navigation_provider.dart';
+import 'package:khadematy_web/admin/shell/views/admin_filter_controls.dart';
 import 'package:khadematy_web/admin/shell/views/admin_page_header_card.dart';
 import 'package:khadematy_web/admin/shell/views/admin_stat_card.dart';
 
@@ -19,6 +22,9 @@ class AdminApplicationsScreen extends StatefulWidget {
 class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
   // Filters: 'all', 'pending', 'approved', 'rejected'
   String _selectedFilter = 'all';
+  int _currentPage = 1;
+  static const int _itemsPerPage = 5;
+  String _lastFilterKey = '';
 
   // Deterministic avatar color palette
   Color _getAvatarColor(int index, String name) {
@@ -77,38 +83,43 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
               fontSize: 13, height: 1.6, color: const Color(0xFF5A5054)),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء',
-                style: GoogleFonts.cairo(color: const Color(0xFF7A6F73))),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final success = await provider.approveApplication(app.id);
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    success
-                        ? 'تم اعتماد نشاط "${app.businessName}" بنجاح وتحديث حالته'
-                        : 'تعذر اعتماد الطلب',
-                    style: GoogleFonts.cairo(),
-                  ),
-                  backgroundColor:
-                      success ? const Color(0xFF059669) : AppColors.error,
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('إلغاء',
+                    style: GoogleFonts.cairo(color: const Color(0xFF7A6F73))),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
-              );
-            },
-            child: Text('تأكيد الاعتماد',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final success = await provider.approveApplication(app.id);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'تم اعتماد نشاط "${app.businessName}" بنجاح وتحديث حالته'
+                            : 'تعذر اعتماد الطلب',
+                        style: GoogleFonts.cairo(),
+                      ),
+                      backgroundColor:
+                          success ? const Color(0xFF059669) : AppColors.error,
+                    ),
+                  );
+                },
+                child: Text('تأكيد الاعتماد',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),
@@ -183,39 +194,46 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء',
-                style: GoogleFonts.cairo(color: AppColors.burgundy)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC2626),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
-            onPressed: () async {
-              final reason = reasonController.text.trim();
-              Navigator.pop(ctx);
-              final success = await provider.rejectApplication(app.id, reason);
-              if (!context.mounted) return;
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text(
-                    success
-                        ? 'تم رفض طلب "${app.businessName}"'
-                        : 'تعذر رفض الطلب',
-                    style: GoogleFonts.cairo(),
-                  ),
-                  backgroundColor:
-                      success ? const Color(0xFFDC2626) : AppColors.burgundy,
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('إلغاء',
+                    style: GoogleFonts.cairo(color: AppColors.burgundy)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
-              );
-            },
-            child: Text('تأكيد الرفض',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                onPressed: () async {
+                  final reason = reasonController.text.trim();
+                  Navigator.pop(ctx);
+                  final success =
+                      await provider.rejectApplication(app.id, reason);
+                  if (!context.mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        success
+                            ? 'تم رفض طلب "${app.businessName}"'
+                            : 'تعذر رفض الطلب',
+                        style: GoogleFonts.cairo(),
+                      ),
+                      backgroundColor: success
+                          ? const Color(0xFFDC2626)
+                          : AppColors.burgundy,
+                    ),
+                  );
+                },
+                child: Text('تأكيد الرفض',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),
@@ -397,49 +415,53 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
         actionsPadding:
             const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إغلاق',
-                style: GoogleFonts.cairo(
-                    color: AppColors.burgundy, fontWeight: FontWeight.bold)),
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('إغلاق',
+                    style: GoogleFonts.cairo(
+                        color: AppColors.burgundy,
+                        fontWeight: FontWeight.bold)),
+              ),
+              if (app.isPending) ...[
+                OutlinedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _handleReject(context, app, adminData);
+                  },
+                  icon: const Icon(Icons.close, size: 16),
+                  label: Text('رفض الطلب',
+                      style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFFDC2626),
+                    side: const BorderSide(color: Color(0xFFFECDD3)),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _handleApprove(context, app, adminData);
+                  },
+                  icon: const Icon(Icons.check, size: 16),
+                  label: Text('قبول واعتماد الطلب',
+                      style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF059669),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 18, vertical: 10),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                  ),
+                ),
+              ],
+            ],
           ),
-          if (app.isPending) ...[
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _handleReject(context, app, adminData);
-              },
-              icon: const Icon(Icons.close, size: 16),
-              label: Text('رفض الطلب',
-                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFFDC2626),
-                side: const BorderSide(color: Color(0xFFFECDD3)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-            const SizedBox(width: 8),
-            ElevatedButton.icon(
-              onPressed: () {
-                Navigator.pop(ctx);
-                _handleApprove(context, app, adminData);
-              },
-              icon: const Icon(Icons.check, size: 16),
-              label: Text('قبول واعتماد الطلب',
-                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF059669),
-                foregroundColor: Colors.white,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -501,6 +523,18 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
       return true;
     }).toList();
 
+    final filterKey = '$_selectedFilter|$globalSearch';
+    if (filterKey != _lastFilterKey) {
+      _lastFilterKey = filterKey;
+      _currentPage = 1;
+    }
+
+    final pagination = PaginationSlice.fromList(
+      filteredApps,
+      currentPage: _currentPage,
+      itemsPerPage: _itemsPerPage,
+    );
+
     final totalCount = allApps.length;
     final pendingCount = allApps.where((a) => a.isPending).length;
     final approvedCount = allApps.where((a) => a.isApproved).length;
@@ -538,7 +572,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
           const SizedBox(height: 10),
 
           // 4. Applications Table Card
-          _buildApplicationsTable(context, filteredApps, adminData),
+          _buildApplicationsTable(context, pagination, adminData),
         ],
       ),
     );
@@ -629,86 +663,7 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
     );
   }
 
-  Widget _buildFilterPill({
-    required String label,
-    required int count,
-    required String filterKey,
-    required Color activeBg,
-    required Color activeFg,
-    required Color inactiveBg,
-    required Color inactiveFg,
-  }) {
-    final isSelected = _selectedFilter == filterKey;
-
-    return InkWell(
-      onTap: () {
-        setState(() {
-          _selectedFilter = filterKey;
-        });
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        height: 40,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? activeBg : inactiveBg,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected ? activeBg : const Color(0xFFEBE6DF),
-            width: 1.2,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: activeBg.withOpacity(0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
-                  )
-                ]
-              : null,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
-          children: [
-            Flexible(
-              child: Text(
-                label,
-                style: GoogleFonts.cairo(
-                  fontSize: 12.5,
-                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.bold,
-                  color: isSelected ? activeFg : inactiveFg,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1.5),
-              decoration: BoxDecoration(
-                color: isSelected
-                    ? Colors.white.withOpacity(0.25)
-                    : inactiveFg.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                '$count',
-                style: GoogleFonts.cairo(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w800,
-                  color: isSelected ? activeFg : inactiveFg,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // 2. Filter Bar (Spread across the entire row)
+  // 2. Filter Bar (Unified chips and dropdown across entire row)
   Widget _buildFilterBar(
     AdminDashboardProvider adminData,
     int total,
@@ -720,109 +675,77 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
       builder: (context, constraints) {
         final content = Row(
           children: [
-            // 1. All
             Expanded(
-              child: _buildFilterPill(
+              child: AdminFilterChip(
                 label: 'الكل',
                 count: total,
-                filterKey: 'all',
-                activeBg: AppColors.burgundy,
-                activeFg: Colors.white,
-                inactiveBg: const Color(0xFFF7F4F2),
-                inactiveFg: const Color(0xFF5A5054),
+                isSelected: _selectedFilter == 'all',
+                expand: true,
+                onTap: () => setState(() => _selectedFilter = 'all'),
               ),
             ),
-            const SizedBox(width: 20),
-
-            // 2. Pending
+            const SizedBox(width: 10),
             Expanded(
-              child: _buildFilterPill(
+              child: AdminFilterChip(
                 label: 'قيد المراجعة',
                 count: pending,
-                filterKey: 'pending',
-                activeBg: const Color(0xFFD97706),
-                activeFg: Colors.white,
-                inactiveBg: const Color(0xFFFEF3C7),
-                inactiveFg: const Color(0xFFB45309),
+                isSelected: _selectedFilter == 'pending',
+                expand: true,
+                onTap: () => setState(() => _selectedFilter = 'pending'),
               ),
             ),
-            const SizedBox(width: 8),
-
-            // 3. Approved
+            const SizedBox(width: 10),
             Expanded(
-              child: _buildFilterPill(
+              child: AdminFilterChip(
                 label: 'مقبول',
                 count: approved,
-                filterKey: 'approved',
-                activeBg: const Color(0xFF059669),
-                activeFg: Colors.white,
-                inactiveBg: const Color(0xFFFEE2E2),
-                inactiveFg: const Color(0xFF047857),
+                isSelected: _selectedFilter == 'approved',
+                expand: true,
+                onTap: () => setState(() => _selectedFilter = 'approved'),
               ),
             ),
-            const SizedBox(width: 8),
-
-            // 4. Rejected
+            const SizedBox(width: 10),
             Expanded(
-              child: _buildFilterPill(
+              child: AdminFilterChip(
                 label: 'مرفوض',
                 count: rejected,
-                filterKey: 'rejected',
-                activeBg: const Color(0xFFDC2626),
-                activeFg: Colors.white,
-                inactiveBg: const Color(0xFFFEE2E2),
-                inactiveFg: const Color(0xFFB91C1C),
+                isSelected: _selectedFilter == 'rejected',
+                expand: true,
+                onTap: () => setState(() => _selectedFilter = 'rejected'),
               ),
             ),
-            const SizedBox(width: 20),
-
-            // 5. Status Dropdown
-            Container(
-              height: 40,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                color: AppColors.cardBg,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: const Color(0xFFEBE6DF)),
-              ),
-              child: DropdownButtonHideUnderline(
-                child: DropdownButton<String>(
-                  value: _selectedFilter,
-                  icon: const Icon(Icons.keyboard_arrow_down,
-                      size: 18, color: Color(0xFF6B7280)),
-                  style: GoogleFonts.cairo(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w600,
-                      color: const Color(0xFF2E2527)),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() => _selectedFilter = val);
-                    }
-                  },
-                  items: const [
-                    DropdownMenuItem(
-                        value: 'all', child: Text('كافة الحالات (الكل)')),
-                    DropdownMenuItem(
-                        value: 'pending', child: Text('قيد المراجعة فقط')),
-                    DropdownMenuItem(
-                        value: 'approved', child: Text('المقبولة فقط')),
-                    DropdownMenuItem(
-                        value: 'rejected', child: Text('المرفوضة فقط')),
-                  ],
-                ),
-              ),
+            const SizedBox(width: 12),
+            AdminFilterDropdown<String>(
+              value: _selectedFilter,
+              icon: Icons.filter_alt_outlined,
+              isActive: _selectedFilter != 'all',
+              items: const [
+                DropdownMenuItem(
+                    value: 'all', child: Text('كافة الحالات (الكل)')),
+                DropdownMenuItem(
+                    value: 'pending', child: Text('قيد المراجعة فقط')),
+                DropdownMenuItem(
+                    value: 'approved', child: Text('المقبولة فقط')),
+                DropdownMenuItem(
+                    value: 'rejected', child: Text('المرفوضة فقط')),
+              ],
+              onChanged: (val) {
+                if (val != null) {
+                  setState(() => _selectedFilter = val);
+                }
+              },
             ),
           ],
         );
 
-        if (constraints.maxWidth >= 760) {
+        if (constraints.maxWidth >= 780) {
           return SizedBox(width: double.infinity, child: content);
         }
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           physics: const BouncingScrollPhysics(),
-          child: SizedBox(width: 760, child: content),
+          child: SizedBox(width: 780, child: content),
         );
       },
     );
@@ -831,9 +754,10 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
   // 3. Applications Table Card
   Widget _buildApplicationsTable(
     BuildContext context,
-    List<ProviderApplicationModel> applications,
+    PaginationSlice<ProviderApplicationModel> pagination,
     AdminDashboardProvider adminData,
   ) {
+    final applications = pagination.pageItems;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -850,110 +774,129 @@ class _AdminApplicationsScreenState extends State<AdminApplicationsScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final tableWidth =
-                constraints.maxWidth < 820 ? 820.0 : constraints.maxWidth;
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                width: tableWidth,
-                child: Column(
-                  children: [
-                    // Table Header Row
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 14),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFAFAF9),
-                        border: Border(
-                            bottom: BorderSide(
-                                color: Color(0xFFF0EBE8), width: 1.2)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                              flex: 3, child: _buildHeaderCell('مقدم الخدمة')),
-                          Expanded(
-                              flex: 3, child: _buildHeaderCell('اسم النشاط')),
-                          Expanded(
-                              flex: 2, child: _buildHeaderCell('نوع الخدمة')),
-                          Expanded(flex: 2, child: _buildHeaderCell('المدينة')),
-                          Expanded(
-                              flex: 2, child: _buildHeaderCell('تاريخ الطلب')),
-                          Expanded(flex: 2, child: _buildHeaderCell('الحالة')),
-                          Expanded(
-                              flex: 2,
-                              child: _buildHeaderCell('الإجراء',
-                                  alignment: Alignment.centerLeft)),
-                        ],
-                      ),
-                    ),
-
-                    // Loading state
-                    if (adminData.isLoading && applications.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 60),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                              color: AppColors.burgundy),
-                        ),
-                      )
-                    // Empty state
-                    else if (applications.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 60, horizontal: 20),
-                        child: Center(
-                          child: Column(
+        child: Column(
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final tableWidth =
+                    constraints.maxWidth < 820 ? 820.0 : constraints.maxWidth;
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: tableWidth,
+                    child: Column(
+                      children: [
+                        // Table Header Row
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 14),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFAFAF9),
+                            border: Border(
+                                bottom: BorderSide(
+                                    color: Color(0xFFF0EBE8), width: 1.2)),
+                          ),
+                          child: Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFAF7F6),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const Icon(Icons.inbox_outlined,
-                                    size: 40, color: Color(0xFFB0A5A8)),
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                'لا توجد طلبات انضمام تطابق معايير البحث أو الفلتر',
-                                style: GoogleFonts.cairo(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF5A5054),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'عند تقديم طلبات انضمام جديدة من قبل مقدمي الخدمات ستظهر في هذا الجدول مباشرة من قاعدة البيانات.',
-                                style: GoogleFonts.cairo(
-                                    fontSize: 12.5,
-                                    color: const Color(0xFF8A7F84)),
-                              ),
+                              Expanded(
+                                  flex: 3,
+                                  child: _buildHeaderCell('مقدم الخدمة')),
+                              Expanded(
+                                  flex: 3,
+                                  child: _buildHeaderCell('اسم النشاط')),
+                              Expanded(
+                                  flex: 2,
+                                  child: _buildHeaderCell('نوع الخدمة')),
+                              Expanded(
+                                  flex: 2, child: _buildHeaderCell('المدينة')),
+                              Expanded(
+                                  flex: 2,
+                                  child: _buildHeaderCell('تاريخ الطلب')),
+                              Expanded(
+                                  flex: 2, child: _buildHeaderCell('الحالة')),
+                              Expanded(
+                                  flex: 2,
+                                  child: _buildHeaderCell('الإجراء',
+                                      alignment: Alignment.centerLeft)),
                             ],
                           ),
                         ),
-                      )
-                    // Table Rows
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: applications.length,
-                        separatorBuilder: (_, __) => const Divider(
-                            height: 1, thickness: 1, color: Color(0xFFF5EFEF)),
-                        itemBuilder: (context, index) {
-                          final app = applications[index];
-                          return _buildTableRow(context, app, index, adminData);
-                        },
-                      ),
-                  ],
-                ),
+
+                        // Loading state
+                        if (adminData.isLoading && applications.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 60),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                  color: AppColors.burgundy),
+                            ),
+                          )
+                        // Empty state
+                        else if (applications.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 60, horizontal: 20),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFAF7F6),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Icon(Icons.inbox_outlined,
+                                        size: 40, color: Color(0xFFB0A5A8)),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    'لا توجد طلبات انضمام تطابق معايير البحث أو الفلتر',
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF5A5054),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'عند تقديم طلبات انضمام جديدة من قبل مقدمي الخدمات ستظهر في هذا الجدول مباشرة من قاعدة البيانات.',
+                                    style: GoogleFonts.cairo(
+                                        fontSize: 12.5,
+                                        color: const Color(0xFF8A7F84)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        // Table Rows
+                        else
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: applications.length,
+                            separatorBuilder: (_, __) => const Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: Color(0xFFF5EFEF)),
+                            itemBuilder: (context, index) {
+                              final app = applications[index];
+                              return _buildTableRow(
+                                  context, app, index, adminData);
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (pagination.totalFiltered > 0)
+              TablePaginationBar(
+                pagination: pagination,
+                itemLabel: 'طلب',
+                onPageChanged: (page) => setState(() => _currentPage = page),
               ),
-            );
-          },
+          ],
         ),
       ),
     );

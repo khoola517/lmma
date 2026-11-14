@@ -5,6 +5,7 @@ import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/theme/app_text_styles.dart';
 import 'package:khadematy_web/core/widgets/custom_card.dart';
 import 'package:khadematy_web/core/widgets/custom_button.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
 import 'package:khadematy_web/admin/dashboard/providers/admin_dashboard_provider.dart';
 import 'package:khadematy_web/admin/shell/views/admin_page_header_card.dart';
 
@@ -92,22 +93,26 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء', style: AppTextStyles.labelMedium),
-          ),
-          CustomButton(
-            text: 'تحديث كلمة المرور',
-            variant: ButtonVariant.primary,
-            onPressed: () {
-              Navigator.pop(ctx);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('تم تحديث كلمة مرور المشرف بنجاح'),
-                  backgroundColor: AppColors.success,
-                ),
-              );
-            },
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('إلغاء', style: AppTextStyles.labelMedium),
+              ),
+              CustomButton(
+                text: 'تحديث كلمة المرور',
+                variant: ButtonVariant.primary,
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('تم تحديث كلمة مرور المشرف بنجاح'),
+                      backgroundColor: AppColors.success,
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -127,8 +132,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
           const AdminPageHeaderCard(
             title: 'إعدادات النظام والمنصة',
             subtitle: 'ضبط المعايير العامة، سياسات العمولة، التنبيهات، والأمان الإداري',
-            icon: Icons.settings_suggest_rounded,
-            breadcrumb: 'لوحة التحكم / الإعدادات',
+            // icon: Icons.settings_suggest_rounded,
+            // breadcrumb: 'لوحة التحكم / الإعدادات',
           ),
 
           const SizedBox(height: 24),

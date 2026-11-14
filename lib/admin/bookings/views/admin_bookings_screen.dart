@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
+import 'package:khadematy_web/core/widgets/table_pagination_bar.dart';
 import 'package:khadematy_web/admin/dashboard/providers/admin_dashboard_provider.dart';
 import 'package:khadematy_web/admin/shell/providers/admin_navigation_provider.dart';
+import 'package:khadematy_web/admin/shell/views/admin_filter_controls.dart';
 import 'package:khadematy_web/admin/shell/views/admin_page_header_card.dart';
 import 'package:khadematy_web/admin/shell/views/admin_stat_card.dart';
 
@@ -17,13 +19,9 @@ class AdminBookingsScreen extends StatefulWidget {
 class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
   String _selectedStatus =
       'all'; // 'all', 'pending', 'in_progress', 'confirmed', 'completed', 'cancelled'
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
+  int _currentPage = 1;
+  static const int _itemsPerPage = 5;
+  String _lastFilterKey = '';
 
   // Arabic Month Formatter
   String _formatArabicDate(String? rawDate) {
@@ -304,56 +302,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
                       ],
                     ],
                   ),
-                ),
-                const SizedBox(height: 20),
-
-                // Change Status Admin Action
-                Text(
-                  'تحديث حالة الحجز في المنصة:',
-                  style: GoogleFonts.cairo(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: const Color(0xFF2D2327),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 10,
-                  runSpacing: 8,
-                  children: [
-                    _buildStatusActionButton(
-                      ctx,
-                      bookingId: b['id'].toString(),
-                      targetStatus: 'confirmed',
-                      label: 'تأكيد الحجز',
-                      icon: Icons.check_circle_outline,
-                      color: const Color(0xFF16A34A),
-                    ),
-                    _buildStatusActionButton(
-                      ctx,
-                      bookingId: b['id'].toString(),
-                      targetStatus: 'in_progress',
-                      label: 'قيد المعالجة',
-                      icon: Icons.sync,
-                      color: const Color(0xFF2563EB),
-                    ),
-                    _buildStatusActionButton(
-                      ctx,
-                      bookingId: b['id'].toString(),
-                      targetStatus: 'completed',
-                      label: 'اكتمال الحجز',
-                      icon: Icons.task_alt,
-                      color: const Color(0xFF0D9488),
-                    ),
-                    _buildStatusActionButton(
-                      ctx,
-                      bookingId: b['id'].toString(),
-                      targetStatus: 'cancelled',
-                      label: 'إلغاء الحجز',
-                      icon: Icons.cancel_outlined,
-                      color: const Color(0xFFE11D48),
-                    ),
-                  ],
                 ),
               ],
             ),
@@ -666,46 +614,6 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
     );
   }
 
-  Widget _buildStatusActionButton(
-    BuildContext dialogCtx, {
-    required String bookingId,
-    required String targetStatus,
-    required String label,
-    required IconData icon,
-    required Color color,
-  }) {
-    return OutlinedButton.icon(
-      icon: Icon(icon, size: 16, color: color),
-      label: Text(label,
-          style: GoogleFonts.cairo(
-              fontSize: 12, fontWeight: FontWeight.w700, color: color)),
-      style: OutlinedButton.styleFrom(
-        side: BorderSide(color: color.withOpacity(0.4)),
-        backgroundColor: color.withOpacity(0.06),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      onPressed: () async {
-        final adminProvider = dialogCtx.read<AdminDashboardProvider>();
-        final messenger = ScaffoldMessenger.of(context);
-        final ok =
-            await adminProvider.updateBookingStatus(bookingId, targetStatus);
-        if (dialogCtx.mounted) {
-          Navigator.pop(dialogCtx);
-          messenger.showSnackBar(
-            SnackBar(
-              content: Text(
-                ok ? 'تم تحديث حالة الحجز بنجاح' : 'حدث خطأ أثناء التحديث',
-                style: GoogleFonts.cairo(),
-              ),
-              backgroundColor: ok ? AppColors.success : AppColors.error,
-            ),
-          );
-        }
-      },
-    );
-  }
-
   Widget _buildStatusBadge(String status) {
     Color bg;
     Color border;
@@ -840,10 +748,8 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
         }
       }
 
-      // Search query (from local search controller or global search)
-      final query = _searchController.text.trim().isNotEmpty
-          ? _searchController.text.trim().toLowerCase()
-          : globalSearch.trim().toLowerCase();
+      // Search query from global search
+      final query = globalSearch.trim().toLowerCase();
 
       if (query.isNotEmpty) {
         final code = (b['booking_code'] ?? '').toString().toLowerCase();
@@ -865,6 +771,19 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
 
       return true;
     }).toList();
+
+    final filterKey = '$_selectedStatus|$globalSearch';
+    if (filterKey != _lastFilterKey) {
+      _lastFilterKey = filterKey;
+      _currentPage = 1;
+    }
+
+    final pagination = PaginationSlice.fromList(
+      filteredBookings,
+      currentPage: _currentPage,
+      itemsPerPage: _itemsPerPage,
+    );
+    final pageBookings = pagination.pageItems;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
@@ -932,132 +851,42 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
 
           const SizedBox(height: 24),
 
-          // 3. Search & Filter Bar
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFFEBE6DF)),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.015),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
+          // 3. Unified Filter Bar & Export Button
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // Status Filter Dropdown
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFAF8F5),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFEBE6DF)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedStatus,
-                      style: GoogleFonts.cairo(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF2D2327),
-                      ),
-                      icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                          size: 20, color: Color(0xFF8C7B83)),
-                      items: const [
-                        DropdownMenuItem(
-                            value: 'all', child: Text('جميع الحالات (الكل)')),
-                        DropdownMenuItem(
-                            value: 'pending',
-                            child: Text('حجوزات جديدة (قيد الانتظار)')),
-                        DropdownMenuItem(
-                            value: 'in_progress',
-                            child: Text('قيد التنفيذ والمعالجة')),
-                        DropdownMenuItem(
-                            value: 'confirmed',
-                            child: Text('الحجوزات المؤكدة والمكتملة')),
-                        DropdownMenuItem(
-                            value: 'completed',
-                            child: Text('الحجوزات المكتملة فقط')),
-                        DropdownMenuItem(
-                            value: 'cancelled',
-                            child: Text('الحجوزات الملغية')),
-                      ],
-                      onChanged: (val) {
-                        if (val != null) setState(() => _selectedStatus = val);
-                      },
-                    ),
-                  ),
+                AdminFilterDropdown<String>(
+                  value: _selectedStatus,
+                  icon: Icons.filter_alt_outlined,
+                  isActive: _selectedStatus != 'all',
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'all', child: Text('جميع الحالات (الكل)')),
+                    DropdownMenuItem(
+                        value: 'pending',
+                        child: Text('حجوزات جديدة (قيد الانتظار)')),
+                    DropdownMenuItem(
+                        value: 'in_progress',
+                        child: Text('قيد التنفيذ والمعالجة')),
+                    DropdownMenuItem(
+                        value: 'confirmed',
+                        child: Text('الحجوزات المؤكدة والمكتملة')),
+                    DropdownMenuItem(
+                        value: 'completed',
+                        child: Text('الحجوزات المكتملة فقط')),
+                    DropdownMenuItem(
+                        value: 'cancelled', child: Text('الحجوزات الملغية')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) setState(() => _selectedStatus = val);
+                  },
                 ),
-
-                const SizedBox(width: 12),
-
-                // Export Button
-                OutlinedButton.icon(
-                  onPressed: () => _exportReport(context, filteredBookings),
-                  icon: const Icon(Icons.file_download_outlined, size: 16),
-                  label: Text(
-                    'تصدير الحجوزات',
-                    style: GoogleFonts.cairo(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.5,
-                    ),
-                  ),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.burgundy,
-                    side: const BorderSide(color: Color(0xFFEBE6DF)),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Search Input Box
-                SizedBox(
-                  width: 320,
-                  height: 42,
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      hintText: 'بحث برمز الحجز أو العميل أو الخدمة...',
-                      hintStyle: GoogleFonts.cairo(
-                          fontSize: 12, color: const Color(0xFF8C7B83)),
-                      suffixIcon: _searchController.text.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear, size: 16),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() {});
-                              },
-                            )
-                          : const Icon(Icons.search,
-                              size: 20, color: Color(0xFF8C7B83)),
-                      fillColor: const Color(0xFFFAF8F5),
-                      filled: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Color(0xFFEBE6DF)),
-                      ),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(color: Color(0xFFEBE6DF)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        borderSide: const BorderSide(
-                            color: Color(0xFF681729), width: 1.2),
-                      ),
-                    ),
-                  ),
+                AdminFilterActionButton(
+                  label: 'تصدير الحجوزات',
+                  icon: Icons.file_download_outlined,
+                  onTap: () => _exportReport(context, filteredBookings),
                 ),
               ],
             ),
@@ -1081,97 +910,113 @@ class _AdminBookingsScreenState extends State<AdminBookingsScreen> {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final tableWidth = constraints.maxWidth < 950
-                      ? 950.0
-                      : constraints.maxWidth;
+              child: Column(
+                children: [
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final tableWidth = constraints.maxWidth < 950
+                          ? 950.0
+                          : constraints.maxWidth;
 
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: tableWidth,
-                      child: Column(
-                        children: [
-                          // Table Header Row
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 20, vertical: 14),
-                            decoration: const BoxDecoration(
-                              color: Color(0xFFFAF8F5),
-                              border: Border(
-                                bottom: BorderSide(color: Color(0xFFEBE6DF)),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                _buildTableHeader('العميل', flex: 3),
-                                _buildTableHeader('الخدمة والفعالية', flex: 4),
-                                _buildTableHeader('مقدم الخدمة', flex: 3),
-                                _buildTableHeader('موعد الفعالية', flex: 3),
-                                _buildTableHeader('المبلغ الإجمالي', flex: 2),
-                                _buildTableHeader('الحالة', flex: 2),
-                                _buildTableHeader('الإجراءات',
-                                    flex: 2, textAlign: TextAlign.center),
-                              ],
-                            ),
-                          ),
-
-                          // Data Rows or Loading/Empty State
-                          if (adminData.isLoading && adminData.bookings.isEmpty)
-                            const Padding(
-                              padding: EdgeInsets.all(60),
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                    color: Color(0xFF681729)),
-                              ),
-                            )
-                          else if (filteredBookings.isEmpty)
-                            Padding(
-                              padding: const EdgeInsets.all(60),
-                              child: Center(
-                                child: Column(
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: SizedBox(
+                          width: tableWidth,
+                          child: Column(
+                            children: [
+                              // Table Header Row
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20, vertical: 14),
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFFFAF8F5),
+                                  border: Border(
+                                    bottom:
+                                        BorderSide(color: Color(0xFFEBE6DF)),
+                                  ),
+                                ),
+                                child: Row(
                                   children: [
-                                    const Icon(Icons.event_busy_outlined,
-                                        size: 48, color: Color(0xFFB0A4A7)),
-                                    const SizedBox(height: 12),
-                                    Text(
-                                      'لا توجد حجوزات مطابقة للبحث أو التصفية',
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF2D2327),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      'جرب مسح عبارة البحث أو اختيار "جميع الحالات" للاطلاع على الحجوزات المسجلة.',
-                                      style: GoogleFonts.cairo(
-                                        fontSize: 13,
-                                        color: const Color(0xFF8C7B83),
-                                      ),
-                                    ),
+                                    _buildTableHeader('العميل', flex: 3),
+                                    _buildTableHeader('الخدمة والفعالية',
+                                        flex: 4),
+                                    _buildTableHeader('مقدم الخدمة', flex: 3),
+                                    _buildTableHeader('موعد الفعالية',
+                                        flex: 3),
+                                    _buildTableHeader('المبلغ الإجمالي',
+                                        flex: 2),
+                                    _buildTableHeader('الحالة', flex: 2),
+                                    _buildTableHeader('الإجراءات',
+                                        flex: 2, textAlign: TextAlign.center),
                                   ],
                                 ),
                               ),
-                            )
-                          else
-                            ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: filteredBookings.length,
-                              separatorBuilder: (_, __) => const Divider(
-                                  height: 1, color: Color(0xFFEBE6DF)),
-                              itemBuilder: (context, index) {
-                                final b = filteredBookings[index];
-                                return _buildTableRow(context, b, index);
-                              },
-                            ),
-                        ],
-                      ),
+
+                              // Data Rows or Loading/Empty State
+                              if (adminData.isLoading &&
+                                  adminData.bookings.isEmpty)
+                                const Padding(
+                                  padding: EdgeInsets.all(60),
+                                  child: Center(
+                                    child: CircularProgressIndicator(
+                                        color: Color(0xFF681729)),
+                                  ),
+                                )
+                              else if (filteredBookings.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.all(60),
+                                  child: Center(
+                                    child: Column(
+                                      children: [
+                                        const Icon(Icons.event_busy_outlined,
+                                            size: 48, color: Color(0xFFB0A4A7)),
+                                        const SizedBox(height: 12),
+                                        Text(
+                                          'لا توجد حجوزات مطابقة للبحث أو التصفية',
+                                          style: GoogleFonts.cairo(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: const Color(0xFF2D2327),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text(
+                                          'جرب مسح عبارة البحث أو اختيار "جميع الحالات" للاطلاع على الحجوزات المسجلة.',
+                                          style: GoogleFonts.cairo(
+                                            fontSize: 13,
+                                            color: const Color(0xFF8C7B83),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                )
+                              else
+                                ListView.separated(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: pageBookings.length,
+                                  separatorBuilder: (_, __) => const Divider(
+                                      height: 1, color: Color(0xFFEBE6DF)),
+                                  itemBuilder: (context, index) {
+                                    final b = pageBookings[index];
+                                    return _buildTableRow(context, b, index);
+                                  },
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  if (pagination.totalFiltered > 0)
+                    TablePaginationBar(
+                      pagination: pagination,
+                      itemLabel: 'حجز',
+                      onPageChanged: (page) =>
+                          setState(() => _currentPage = page),
                     ),
-                  );
-                },
+                ],
               ),
             ),
           ),

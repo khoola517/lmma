@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/theme/app_text_styles.dart';
 import 'package:khadematy_web/core/widgets/custom_button.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
 import 'package:khadematy_web/core/widgets/custom_card.dart';
 import 'package:khadematy_web/provider/services/models/service_model.dart';
 import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
@@ -88,41 +89,45 @@ class _ServicesScreenState extends State<ServicesScreen> {
           style: AppTextStyles.bodyMedium,
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء', style: AppTextStyles.labelMedium),
-          ),
-          CustomButton(
-            text: 'حذف الخدمة',
-            variant: ButtonVariant.danger,
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final provider = context.read<ServicesProvider>();
-              final success = await provider.deleteService(service.id);
-              if (!context.mounted) return;
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('إلغاء', style: AppTextStyles.labelMedium),
+              ),
+              CustomButton(
+                text: 'حذف الخدمة',
+                variant: ButtonVariant.danger,
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final provider = context.read<ServicesProvider>();
+                  final success = await provider.deleteService(service.id);
+                  if (!context.mounted) return;
 
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      provider.errorMessage ??
-                          'تم حذف الخدمة بنجاح من قاعدة البيانات',
-                    ),
-                    backgroundColor: AppColors.burgundy,
-                  ),
-                );
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      provider.errorMessage ??
-                          'فشل حذف الخدمة، يرجى المحاولة لاحقاً',
-                    ),
-                    backgroundColor: AppColors.error,
-                  ),
-                );
-              }
-            },
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          provider.errorMessage ??
+                              'تم حذف الخدمة بنجاح من قاعدة البيانات',
+                        ),
+                        backgroundColor: AppColors.burgundy,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          provider.errorMessage ??
+                              'فشل حذف الخدمة، يرجى المحاولة لاحقاً',
+                        ),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -202,7 +207,6 @@ class _ServicesScreenState extends State<ServicesScreen> {
             title: 'خدماتي',
             subtitle:
                 'إدارة باقات وخدمات المناسبات المعروضة في منصة خِدمتي والأسعار المباشرة وتحديث الحالة',
-            icon: Icons.category_outlined,
             action: ElevatedButton.icon(
               onPressed: _openAddService,
               icon:

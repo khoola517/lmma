@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/theme/app_text_styles.dart';
 import 'package:khadematy_web/core/widgets/custom_button.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
 import 'package:khadematy_web/core/widgets/custom_card.dart';
 import 'package:khadematy_web/core/widgets/status_badge.dart';
 import 'package:khadematy_web/provider/bookings/models/booking_request_model.dart';
@@ -88,34 +89,38 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen> {
           ],
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('تراجع', style: AppTextStyles.labelMedium),
-          ),
-          CustomButton(
-            text: 'تأكيد الرفض',
-            variant: ButtonVariant.danger,
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final reason = reasonController.text.trim();
-              final success = await provider.rejectBookingRequest(
-                req.id,
-                reason: reason.isNotEmpty ? reason : null,
-              );
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      success
-                          ? 'تم رفض طلب حجز ${req.customerName}'
-                          : 'تعذر رفض الطلب، يرجى المحاولة لاحقاً',
-                    ),
-                    backgroundColor:
-                        success ? AppColors.error : AppColors.burgundy,
-                  ),
-                );
-              }
-            },
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('تراجع', style: AppTextStyles.labelMedium),
+              ),
+              CustomButton(
+                text: 'تأكيد الرفض',
+                variant: ButtonVariant.danger,
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final reason = reasonController.text.trim();
+                  final success = await provider.rejectBookingRequest(
+                    req.id,
+                    reason: reason.isNotEmpty ? reason : null,
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          success
+                              ? 'تم رفض طلب حجز ${req.customerName}'
+                              : 'تعذر رفض الطلب، يرجى المحاولة لاحقاً',
+                        ),
+                        backgroundColor:
+                            success ? AppColors.error : AppColors.burgundy,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ],
           ),
         ],
       ),
@@ -584,53 +589,120 @@ class _BookingRequestsScreenState extends State<BookingRequestsScreen> {
           const SizedBox(height: 20),
 
           // Action Buttons
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              CustomButton(
-                text: isProcessing ? 'جاري المعالجة...' : 'قبول وتأكيد الحجز',
-                icon: isProcessing ? null : Icons.check_circle_outline,
-                variant: ButtonVariant.primary,
-                height: 40,
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                onPressed: isProcessing
-                    ? null
-                    : () async {
-                        final success =
-                            await provider.acceptBookingRequest(req.id);
-                        if (context.mounted) {
-                          if (success) {
-                            context
-                                .read<ProfileProvider>()
-                                .incrementBookingsCount();
-                          }
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                success
-                                    ? 'تم قبول وتأكيد حجز ${req.customerName} بنجاح وإضافته إلى الحجوزات المؤكدة'
-                                    : 'تعذر قبول الحجز، يرجى المحاولة لاحقاً',
-                              ),
-                              backgroundColor: success
-                                  ? AppColors.burgundy
-                                  : AppColors.error,
-                            ),
+          if (req.isExpired) ...[
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                color: AppColors.errorBg,
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.errorBorder),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.timer_off_outlined,
+                      color: AppColors.error, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'تجاوز هذا الطلب مهلة الرد المحددة (${req.defaultResponseHours} ساعة). تم إخفاء زر القبول ويُرجى إلغاء الطلب لإشعار العميل على الموبايل.',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: AppColors.error,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                CustomButton(
+                  text: isProcessing
+                      ? 'جاري الإلغاء...'
+                      : 'إلغاء الحجز وإشعار العميل',
+                  icon: isProcessing ? null : Icons.cancel_outlined,
+                  variant: ButtonVariant.danger,
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  onPressed: isProcessing
+                      ? null
+                      : () async {
+                          final success = await provider.cancelExpiredBooking(
+                            req.id,
+                            reason:
+                                'تجاوز مهلة تأكيد الحجز (${req.defaultResponseHours} ساعة)',
                           );
-                        }
-                      },
-              ),
-              const SizedBox(width: 12),
-              CustomButton(
-                text: 'رفض الطلب',
-                icon: Icons.close,
-                variant: ButtonVariant.danger,
-                height: 40,
-                onPressed: isProcessing
-                    ? null
-                    : () => _confirmRejectRequest(context, req, provider),
-              ),
-            ],
-          ),
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  success
+                                      ? 'تم إلغاء الحجز بنجاح وإرسال إشعار للعميل في الموبايل'
+                                      : 'تعذر إلغاء الحجز، يرجى المحاولة لاحقاً',
+                                ),
+                                backgroundColor: success
+                                    ? AppColors.burgundy
+                                    : AppColors.error,
+                              ),
+                            );
+                          }
+                        },
+                ),
+              ],
+            ),
+          ] else ...[
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                CustomButton(
+                  text: isProcessing ? 'جاري المعالجة...' : 'قبول وتأكيد الحجز',
+                  icon: isProcessing ? null : Icons.check_circle_outline,
+                  variant: ButtonVariant.primary,
+                  height: 40,
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  onPressed: isProcessing
+                      ? null
+                      : () async {
+                          final success =
+                              await provider.acceptBookingRequest(req.id);
+                          if (context.mounted) {
+                            if (success) {
+                              context
+                                  .read<ProfileProvider>()
+                                  .incrementBookingsCount();
+                            }
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  success
+                                      ? 'تم قبول وتأكيد حجز ${req.customerName} بنجاح وإضافته إلى الحجوزات المؤكدة'
+                                      : (provider.errorMessage ??
+                                          'تعذر قبول الحجز، يرجى المحاولة لاحقاً'),
+                                ),
+                                backgroundColor: success
+                                    ? AppColors.burgundy
+                                    : AppColors.error,
+                              ),
+                            );
+                          }
+                        },
+                ),
+                const SizedBox(width: 12),
+                CustomButton(
+                  text: 'رفض الطلب',
+                  icon: Icons.close,
+                  variant: ButtonVariant.danger,
+                  height: 40,
+                  onPressed: isProcessing
+                      ? null
+                      : () => _confirmRejectRequest(context, req, provider),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

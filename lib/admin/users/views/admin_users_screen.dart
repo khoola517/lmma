@@ -3,8 +3,11 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
+import 'package:khadematy_web/core/widgets/table_pagination_bar.dart';
 import 'package:khadematy_web/admin/dashboard/providers/admin_dashboard_provider.dart';
 import 'package:khadematy_web/admin/shell/providers/admin_navigation_provider.dart';
+import 'package:khadematy_web/admin/shell/views/admin_filter_controls.dart';
 import 'package:khadematy_web/admin/shell/views/admin_page_header_card.dart';
 import 'package:khadematy_web/admin/shell/views/admin_stat_card.dart';
 
@@ -18,6 +21,9 @@ class AdminUsersScreen extends StatefulWidget {
 class _AdminUsersScreenState extends State<AdminUsersScreen> {
   String _selectedRole = 'all'; // 'all', 'customer', 'provider', 'admin'
   String _selectedStatusFilter = 'all'; // 'all', 'active', 'inactive'
+  int _currentPage = 1;
+  static const int _itemsPerPage = 5;
+  String _lastSearchQuery = '';
 
   @override
   void initState() {
@@ -147,42 +153,45 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               ),
             ),
             actions: [
-               ElevatedButton(
-                onPressed: selectedRole == currentRole
-                    ? null
-                    : () async {
-                        final messenger = ScaffoldMessenger.of(context);
-                        Navigator.pop(ctx);
-                        final ok = await adminData.updateUserRole(
-                            userId, selectedRole);
-                        messenger.showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              ok
-                                  ? 'تم تحديث صلاحية $fullName بنجاح في Supabase'
-                                  : 'فشل تحديث الصلاحية',
-                              style: GoogleFonts.cairo(),
-                            ),
-                            backgroundColor:
-                                ok ? AppColors.success : AppColors.error,
-                          ),
-                        );
-                      },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.burgundy,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8)),
-                ),
-                child: Text('حفظ التعديل',
-                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              DialogActionsRow(
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx),
+                    child: Text('إلغاء',
+                        style: GoogleFonts.cairo(color: AppColors.textSecondary)),
+                  ),
+                  ElevatedButton(
+                    onPressed: selectedRole == currentRole
+                        ? null
+                        : () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            Navigator.pop(ctx);
+                            final ok = await adminData.updateUserRole(
+                                userId, selectedRole);
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  ok
+                                      ? 'تم تحديث صلاحية $fullName بنجاح في Supabase'
+                                      : 'فشل تحديث الصلاحية',
+                                  style: GoogleFonts.cairo(),
+                                ),
+                                backgroundColor:
+                                    ok ? AppColors.success : AppColors.error,
+                              ),
+                            );
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.burgundy,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: Text('حفظ التعديل',
+                        style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: Text('إلغاء',
-                    style: GoogleFonts.cairo(color: AppColors.textSecondary)),
-              ),
-             
             ],
           );
         },
@@ -348,69 +357,77 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           ),
         ),
         actions: [
-          OutlinedButton.icon(
-            icon: const Icon(Icons.manage_accounts_outlined, size: 16),
-            label: Text('تعديل الصلاحية',
-                style: GoogleFonts.cairo(
-                    fontWeight: FontWeight.bold, fontSize: 12)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFF4B5563),
-              side: const BorderSide(color: Color(0xFFD1D5DB)),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () {
-              Navigator.pop(ctx);
-              _showChangeRoleDialog(context, user, adminData);
-            },
-          ),
-          OutlinedButton.icon(
-            icon: Icon(
-              isActive ? Icons.block_outlined : Icons.check_circle_outline,
-              size: 16,
-            ),
-            label: Text(
-              isActive ? 'تعطيل الحساب' : 'تنشيط الحساب',
-              style:
-                  GoogleFonts.cairo(fontWeight: FontWeight.bold, fontSize: 12),
-            ),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: isActive ? AppColors.error : AppColors.success,
-              side: BorderSide(
-                color:
-                    isActive ? AppColors.errorBorder : AppColors.successBorder,
+          DialogActionsRow(
+            children: [
+              OutlinedButton.icon(
+                icon: const Icon(Icons.manage_accounts_outlined, size: 16),
+                label: Text('تعديل الصلاحية',
+                    style: GoogleFonts.cairo(
+                        fontWeight: FontWeight.bold, fontSize: 12)),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFF4B5563),
+                  side: const BorderSide(color: Color(0xFFD1D5DB)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  _showChangeRoleDialog(context, user, adminData);
+                },
               ),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final messenger = ScaffoldMessenger.of(context);
-              final ok = await adminData.toggleUserStatus(userId, isActive);
-              if (ok) {
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      'تم ${isActive ? 'تعطيل' : 'تنشيط'} حساب $fullName بنجاح في Supabase',
-                      style: GoogleFonts.cairo(),
-                    ),
-                    backgroundColor:
-                        isActive ? AppColors.error : AppColors.success,
+              OutlinedButton.icon(
+                icon: Icon(
+                  isActive
+                      ? Icons.block_outlined
+                      : Icons.check_circle_outline,
+                  size: 16,
+                ),
+                label: Text(
+                  isActive ? 'تعطيل الحساب' : 'تنشيط الحساب',
+                  style: GoogleFonts.cairo(
+                      fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor:
+                      isActive ? AppColors.error : AppColors.success,
+                  side: BorderSide(
+                    color: isActive
+                        ? AppColors.errorBorder
+                        : AppColors.successBorder,
                   ),
-                );
-              }
-            },
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.burgundy,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text('إغلاق',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final messenger = ScaffoldMessenger.of(context);
+                  final ok = await adminData.toggleUserStatus(userId, isActive);
+                  if (ok) {
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'تم ${isActive ? 'تعطيل' : 'تنشيط'} حساب $fullName بنجاح في Supabase',
+                          style: GoogleFonts.cairo(),
+                        ),
+                        backgroundColor:
+                            isActive ? AppColors.error : AppColors.success,
+                      ),
+                    );
+                  }
+                },
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.pop(ctx),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.burgundy,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text('إغلاق',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),
@@ -467,10 +484,22 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
     );
   }
 
+  void _selectRole(String roleKey) {
+    setState(() {
+      _selectedRole = roleKey;
+      _currentPage = 1;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final adminData = context.watch<AdminDashboardProvider>();
     final globalSearch = context.watch<AdminNavigationProvider>().searchQuery;
+
+    if (globalSearch != _lastSearchQuery) {
+      _lastSearchQuery = globalSearch;
+      _currentPage = 1;
+    }
 
     final allUsers = adminData.users;
     final totalUsers = allUsers.length;
@@ -502,6 +531,13 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
       return true;
     }).toList();
 
+    // Pagination calculations (5 users per page matching provider tables)
+    final pagination = PaginationSlice.fromList(
+      filteredUsers,
+      currentPage: _currentPage,
+      itemsPerPage: _itemsPerPage,
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
       child: Column(
@@ -527,7 +563,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 iconBg: const Color(0xFFFDF2F4),
                 iconColor: AppColors.burgundy,
                 isSelected: _selectedRole == 'all',
-                onTap: () => setState(() => _selectedRole = 'all'),
+                onTap: () => _selectRole('all'),
               ),
               AdminStatCard(
                 title: 'العملاء المسجلون',
@@ -536,7 +572,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 iconBg: const Color(0xFFEFF6FF),
                 iconColor: const Color(0xFF2563EB),
                 isSelected: _selectedRole == 'customer',
-                onTap: () => setState(() => _selectedRole = 'customer'),
+                onTap: () => _selectRole('customer'),
               ),
               AdminStatCard(
                 title: 'مقدمو الخدمات',
@@ -545,7 +581,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 iconBg: const Color(0xFFFEF9C3),
                 iconColor: const Color(0xFFD97706),
                 isSelected: _selectedRole == 'provider',
-                onTap: () => setState(() => _selectedRole = 'provider'),
+                onTap: () => _selectRole('provider'),
               ),
               AdminStatCard(
                 title: 'مشرفو النظام',
@@ -554,73 +590,56 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                 iconBg: const Color(0xFFECFDF5),
                 iconColor: const Color(0xFF059669),
                 isSelected: _selectedRole == 'admin',
-                onTap: () => setState(() => _selectedRole = 'admin'),
+                onTap: () => _selectRole('admin'),
               ),
             ],
           ),
 
           const SizedBox(height: 10),
 
-          // 3. Filter Bar (Role Filter Chips & Status Dropdown - Clean without local search)
+          // 3. Unified Filter Bar (Role Filter Chips & Status Dropdown)
           SizedBox(
             width: double.infinity,
             child: Row(
               children: [
-                // Role Filter Chips
                 Expanded(
                   child: _buildRoleFilterChip('الكل ($totalUsers)', 'all'),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: _buildRoleFilterChip('العملاء ($customersCount)', 'customer'),
+                  child: _buildRoleFilterChip(
+                      'العملاء ($customersCount)', 'customer'),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: _buildRoleFilterChip('مقدمو الخدمات ($providersCount)', 'provider'),
+                  child: _buildRoleFilterChip(
+                      'مقدمو الخدمات ($providersCount)', 'provider'),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: _buildRoleFilterChip('المشرفون ($adminsCount)', 'admin'),
                 ),
-                const SizedBox(width: 8),
-
-                // Status Filter Dropdown
-                Container(
-                  height: 40,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: AppColors.cardBg,
-                    // color: const Color(0xFFFAF8F5),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFEBE6DF)),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedStatusFilter,
-                      icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                          size: 18, color: Color(0xFF8C7B83)),
-                      style: GoogleFonts.cairo(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF2E2527),
-                      ),
-                      onChanged: (val) {
-                        if (val != null) {
-                          setState(() => _selectedStatusFilter = val);
-                        }
-                      },
-                      items: const [
-                        DropdownMenuItem(
-                            value: 'all', child: Text('كافة الحالات (الكل)')),
-                        DropdownMenuItem(
-                            value: 'active',
-                            child: Text('الحسابات النشطة فقط')),
-                        DropdownMenuItem(
-                            value: 'inactive',
-                            child: Text('الحسابات المعطلة فقط')),
-                      ],
-                    ),
-                  ),
+                const SizedBox(width: 12),
+                AdminFilterDropdown<String>(
+                  value: _selectedStatusFilter,
+                  icon: Icons.filter_alt_outlined,
+                  isActive: _selectedStatusFilter != 'all',
+                  items: const [
+                    DropdownMenuItem(
+                        value: 'all', child: Text('كافة الحالات (الكل)')),
+                    DropdownMenuItem(
+                        value: 'active', child: Text('الحسابات النشطة فقط')),
+                    DropdownMenuItem(
+                        value: 'inactive', child: Text('الحسابات المعطلة فقط')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setState(() {
+                        _selectedStatusFilter = val;
+                        _currentPage = 1;
+                      });
+                    }
+                  },
                 ),
               ],
             ),
@@ -663,6 +682,7 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
                       setState(() {
                         _selectedRole = 'all';
                         _selectedStatusFilter = 'all';
+                        _currentPage = 1;
                       });
                       context
                           .read<AdminNavigationProvider>()
@@ -693,48 +713,27 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
           else if (filteredUsers.isEmpty)
             _buildEmptyUsersState()
           else
-            _buildUsersTable(context, filteredUsers, adminData),
+            _buildUsersTable(context, pagination, adminData),
         ],
       ),
     );
   }
 
   Widget _buildRoleFilterChip(String label, String roleKey) {
-    final isSelected = _selectedRole == roleKey;
-    return ChoiceChip(
-      label: Center(
-        child: Text(
-          label,
-          textAlign: TextAlign.center,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-      selected: isSelected,
-      onSelected: (_) => setState(() => _selectedRole = roleKey),
-      selectedColor: AppColors.burgundy,
-      backgroundColor: AppColors.cardBg,
-      labelStyle: GoogleFonts.cairo(
-        color: isSelected ? Colors.white : const Color(0xFF4B5563),
-        fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
-        fontSize: 12,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(
-          color: isSelected ? AppColors.burgundy : const Color(0xFFEBE6DF),
-        ),
-      ),
-      showCheckmark: false,
-      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
+    return AdminFilterChip(
+      label: label,
+      isSelected: _selectedRole == roleKey,
+      expand: true,
+      onTap: () => _selectRole(roleKey),
     );
   }
 
   Widget _buildUsersTable(
     BuildContext context,
-    List<Map<String, dynamic>> users,
+    PaginationSlice<Map<String, dynamic>> pagination,
     AdminDashboardProvider adminData,
   ) {
+    final users = pagination.pageItems;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -788,7 +787,12 @@ class _AdminUsersScreenState extends State<AdminUsersScreen> {
               },
             ),
 
-           
+            // Table Footer / Pagination Bar (Matching provider screens)
+            TablePaginationBar(
+              pagination: pagination,
+              itemLabel: 'مستخدم',
+              onPageChanged: (page) => setState(() => _currentPage = page),
+            ),
           ],
         ),
       ),

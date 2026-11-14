@@ -66,7 +66,7 @@ class AdminSidebar extends StatelessWidget {
                       Row(
                         children: [
                           Text(
-                            'خِدمتي',
+                            'لمة',
                             style: AppTextStyles.headlineSmall.copyWith(
                               fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary,
@@ -74,22 +74,22 @@ class AdminSidebar extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: AppColors.goldLight,
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              'إدارة',
-                              style: AppTextStyles.labelSmall.copyWith(
-                                color: AppColors.goldDark,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 9,
-                              ),
-                            ),
-                          ),
+                          // Container(
+                          //   padding: const EdgeInsets.symmetric(
+                          //       horizontal: 6, vertical: 2),
+                          //   decoration: BoxDecoration(
+                          //     color: AppColors.goldLight,
+                          //     borderRadius: BorderRadius.circular(8),
+                          //   ),
+                          //   child: Text(
+                          //     'إدارة',
+                          //     style: AppTextStyles.labelSmall.copyWith(
+                          //       color: AppColors.goldDark,
+                          //       fontWeight: FontWeight.bold,
+                          //       fontSize: 9,
+                          //     ),
+                          //   ),
+                          // ),
                         ],
                       ),
                       Text(
@@ -105,8 +105,8 @@ class AdminSidebar extends StatelessWidget {
             ),
           ),
 
-          const Divider(height: 1),
-          const SizedBox(height: 12),
+          // const Divider(height: 1),
+          // const SizedBox(height: 12),
 
           // 12 Navigation Items
           Expanded(
@@ -221,7 +221,7 @@ class AdminSidebar extends StatelessWidget {
                 const SizedBox(height: 4),
                 _buildNavItem(
                   item: AdminNavItem.profile,
-                  title: 'الملف الشخصي للمشرف',
+                  title: 'الملف الشخصي ',
                   icon: Icons.account_circle_outlined,
                   isSelected: nav.selectedItem == AdminNavItem.profile,
                   onTap: () => nav.selectItem(AdminNavItem.profile),
@@ -252,22 +252,26 @@ class AdminSidebar extends StatelessWidget {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.errorBg,
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.errorBorder, width: 1),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.logout, size: 18, color: AppColors.error),
-                    const SizedBox(width: 12),
-                    Text(
-                      'تسجيل خروج المشرف',
-                      style: AppTextStyles.labelMedium.copyWith(
-                        color: AppColors.error,
-                        fontWeight: FontWeight.w700,
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 35),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.logout, size: 18, color: AppColors.cardBg),
+                      const SizedBox(width: 12),
+                      Text(
+                        'تسجيل الخروج',
+                        style: AppTextStyles.labelMedium.copyWith(
+                          color: AppColors.cardBg,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

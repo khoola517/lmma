@@ -43,7 +43,7 @@ class ProviderHeader extends StatelessWidget {
               height: 42,
               decoration: BoxDecoration(
                 
-                color: AppColors.cardBg,
+                color: AppColors.creamBg,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
@@ -52,6 +52,7 @@ class ProviderHeader extends StatelessWidget {
                 style: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.textPrimary),
                 decoration: InputDecoration(
+                  filled: false,
                   hintText: 'ابحث عن حجز، عميل، أو خدمة...',
                   hintStyle: AppTextStyles.bodySmall
                       .copyWith(color: AppColors.textMuted),

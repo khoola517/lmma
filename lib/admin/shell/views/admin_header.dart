@@ -26,7 +26,7 @@ class AdminHeader extends StatelessWidget {
       height: 70,
       padding: const EdgeInsets.symmetric(horizontal: 24),
       decoration: const BoxDecoration(
-        color: AppColors.cardBg,
+        color: AppColors.creamBg,
         border: Border(
           bottom: BorderSide(color: AppColors.border, width: 1),
         ),
@@ -62,7 +62,7 @@ class AdminHeader extends StatelessWidget {
               constraints: const BoxConstraints(maxWidth: 420),
               height: 42,
               decoration: BoxDecoration(
-                color: AppColors.surfaceLow,
+                color: AppColors.cardBg,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: AppColors.border),
               ),
@@ -71,6 +71,7 @@ class AdminHeader extends StatelessWidget {
                 style: AppTextStyles.bodyMedium
                     .copyWith(color: AppColors.textPrimary),
                 decoration: InputDecoration(
+                  filled: false,
                   hintText: 'بحث سريع في النظام، التصنيفات، أو الخدمات...',
                   hintStyle: AppTextStyles.bodySmall
                       .copyWith(color: AppColors.textMuted),

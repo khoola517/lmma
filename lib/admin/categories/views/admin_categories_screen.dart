@@ -4,9 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/widgets/custom_button.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
+import 'package:khadematy_web/core/widgets/table_pagination_bar.dart';
 import 'package:khadematy_web/core/services/storage_service.dart';
 import 'package:khadematy_web/admin/dashboard/providers/admin_dashboard_provider.dart';
 import 'package:khadematy_web/admin/shell/providers/admin_navigation_provider.dart';
+import 'package:khadematy_web/admin/shell/views/admin_filter_controls.dart';
 import 'package:khadematy_web/admin/shell/views/admin_page_header_card.dart';
 import 'package:khadematy_web/admin/shell/views/admin_stat_card.dart';
 
@@ -19,6 +22,9 @@ class AdminCategoriesScreen extends StatefulWidget {
 
 class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
   String _selectedStatusFilter = 'جميع الحالات (الكل)';
+  int _currentPage = 1;
+  static const int _itemsPerPage = 5;
+  String _lastFilterKey = '';
 
   void _showAddCategoryDialog(
       BuildContext context, AdminDashboardProvider adminData) {
@@ -257,61 +263,67 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: isUploadingImage ? null : () => Navigator.pop(ctx),
-              child: Text('إلغاء',
-                  style: GoogleFonts.cairo(color: AppColors.textSecondary)),
-            ),
-            CustomButton(
-              text: isUploadingImage ? 'جاري رفع الصورة...' : 'إضافة التصنيف',
-              isLoading: isUploadingImage,
-              variant: ButtonVariant.primary,
-              onPressed: isUploadingImage
-                  ? null
-                  : () async {
-                      final name = nameController.text.trim();
-                      final desc = descController.text.trim();
-                      final order =
-                          int.tryParse(sortController.text.trim()) ?? 1;
-                      if (name.isEmpty) return;
+            DialogActionsRow(
+              children: [
+                TextButton(
+                  onPressed:
+                      isUploadingImage ? null : () => Navigator.pop(ctx),
+                  child: Text('إلغاء',
+                      style: GoogleFonts.cairo(color: AppColors.textSecondary)),
+                ),
+                CustomButton(
+                  text:
+                      isUploadingImage ? 'جاري رفع الصورة...' : 'إضافة التصنيف',
+                  isLoading: isUploadingImage,
+                  variant: ButtonVariant.primary,
+                  onPressed: isUploadingImage
+                      ? null
+                      : () async {
+                          final name = nameController.text.trim();
+                          final desc = descController.text.trim();
+                          final order =
+                              int.tryParse(sortController.text.trim()) ?? 1;
+                          if (name.isEmpty) return;
 
-                      String finalImageUrl = imageController.text.trim();
+                          String finalImageUrl = imageController.text.trim();
 
-                      // رفع الصورة من الجهاز إلى سوبابيز إن وجدت
-                      if (pickedImageBytes != null) {
-                        setDialogState(() => isUploadingImage = true);
-                        final uploadedUrl =
-                            await StorageService.uploadServiceImage(
-                          bytes: pickedImageBytes!,
-                          originalName: pickedImageName ?? 'category.jpg',
-                          customPath:
-                              'categories/${DateTime.now().millisecondsSinceEpoch}_${pickedImageName ?? "cat.jpg"}',
-                        );
-                        if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
-                          finalImageUrl = uploadedUrl;
-                        }
-                      }
+                          // رفع الصورة من الجهاز إلى سوبابيز إن وجدت
+                          if (pickedImageBytes != null) {
+                            setDialogState(() => isUploadingImage = true);
+                            final uploadedUrl =
+                                await StorageService.uploadServiceImage(
+                              bytes: pickedImageBytes!,
+                              originalName: pickedImageName ?? 'category.jpg',
+                              customPath:
+                                  'categories/${DateTime.now().millisecondsSinceEpoch}_${pickedImageName ?? "cat.jpg"}',
+                            );
+                            if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
+                              finalImageUrl = uploadedUrl;
+                            }
+                          }
 
-                      if (context.mounted) Navigator.pop(ctx);
-                      final ok = await adminData.addCategory(
-                        name,
-                        order,
-                        description: desc,
-                        imageUrl: finalImageUrl,
-                        isActive: isActive,
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok
-                                ? 'تم إضافة التصنيف "$name" بنجاح'
-                                : 'تعذر إضافة التصنيف'),
-                            backgroundColor:
-                                ok ? AppColors.success : AppColors.error,
-                          ),
-                        );
-                      }
-                    },
+                          if (context.mounted) Navigator.pop(ctx);
+                          final ok = await adminData.addCategory(
+                            name,
+                            order,
+                            description: desc,
+                            imageUrl: finalImageUrl,
+                            isActive: isActive,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(ok
+                                    ? 'تم إضافة التصنيف "$name" بنجاح'
+                                    : 'تعذر إضافة التصنيف'),
+                                backgroundColor:
+                                    ok ? AppColors.success : AppColors.error,
+                              ),
+                            );
+                          }
+                        },
+                ),
+              ],
             ),
           ],
         ),
@@ -544,62 +556,68 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
             ),
           ),
           actions: [
-            TextButton(
-              onPressed: isUploadingImage ? null : () => Navigator.pop(ctx),
-              child: Text('إلغاء',
-                  style: GoogleFonts.cairo(color: AppColors.textSecondary)),
-            ),
-            CustomButton(
-              text: isUploadingImage ? 'جاري رفع الصورة...' : 'حفظ التعديلات',
-              isLoading: isUploadingImage,
-              variant: ButtonVariant.primary,
-              onPressed: isUploadingImage
-                  ? null
-                  : () async {
-                      final name = nameController.text.trim();
-                      final desc = descController.text.trim();
-                      final order =
-                          int.tryParse(sortController.text.trim()) ?? 1;
-                      if (name.isEmpty) return;
+            DialogActionsRow(
+              children: [
+                TextButton(
+                  onPressed:
+                      isUploadingImage ? null : () => Navigator.pop(ctx),
+                  child: Text('إلغاء',
+                      style: GoogleFonts.cairo(color: AppColors.textSecondary)),
+                ),
+                CustomButton(
+                  text:
+                      isUploadingImage ? 'جاري رفع الصورة...' : 'حفظ التعديلات',
+                  isLoading: isUploadingImage,
+                  variant: ButtonVariant.primary,
+                  onPressed: isUploadingImage
+                      ? null
+                      : () async {
+                          final name = nameController.text.trim();
+                          final desc = descController.text.trim();
+                          final order =
+                              int.tryParse(sortController.text.trim()) ?? 1;
+                          if (name.isEmpty) return;
 
-                      String finalImageUrl = imageController.text.trim();
+                          String finalImageUrl = imageController.text.trim();
 
-                      // رفع الصورة من الجهاز إن قام باختيار صورة جديدة
-                      if (pickedImageBytes != null) {
-                        setDialogState(() => isUploadingImage = true);
-                        final uploadedUrl =
-                            await StorageService.uploadServiceImage(
-                          bytes: pickedImageBytes!,
-                          originalName: pickedImageName ?? 'category.jpg',
-                          customPath:
-                              'categories/${DateTime.now().millisecondsSinceEpoch}_${pickedImageName ?? "cat.jpg"}',
-                        );
-                        if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
-                          finalImageUrl = uploadedUrl;
-                        }
-                      }
+                          // رفع الصورة من الجهاز إن قام باختيار صورة جديدة
+                          if (pickedImageBytes != null) {
+                            setDialogState(() => isUploadingImage = true);
+                            final uploadedUrl =
+                                await StorageService.uploadServiceImage(
+                              bytes: pickedImageBytes!,
+                              originalName: pickedImageName ?? 'category.jpg',
+                              customPath:
+                                  'categories/${DateTime.now().millisecondsSinceEpoch}_${pickedImageName ?? "cat.jpg"}',
+                            );
+                            if (uploadedUrl != null && uploadedUrl.isNotEmpty) {
+                              finalImageUrl = uploadedUrl;
+                            }
+                          }
 
-                      if (context.mounted) Navigator.pop(ctx);
-                      final ok = await adminData.updateCategory(
-                        id: catId,
-                        name: name,
-                        description: desc,
-                        imageUrl: finalImageUrl,
-                        sortOrder: order,
-                        isActive: isActive,
-                      );
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(ok
-                                ? 'تم تحديث التصنيف "$name" بنجاح'
-                                : 'تعذر تحديث التصنيف'),
-                            backgroundColor:
-                                ok ? AppColors.success : AppColors.error,
-                          ),
-                        );
-                      }
-                    },
+                          if (context.mounted) Navigator.pop(ctx);
+                          final ok = await adminData.updateCategory(
+                            id: catId,
+                            name: name,
+                            description: desc,
+                            imageUrl: finalImageUrl,
+                            sortOrder: order,
+                            isActive: isActive,
+                          );
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(ok
+                                    ? 'تم تحديث التصنيف "$name" بنجاح'
+                                    : 'تعذر تحديث التصنيف'),
+                                backgroundColor:
+                                    ok ? AppColors.success : AppColors.error,
+                              ),
+                            );
+                          }
+                        },
+                ),
+              ],
             ),
           ],
         ),
@@ -929,33 +947,39 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
               fontSize: 13, height: 1.6, color: const Color(0xFF5A5054)),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء',
-                style: GoogleFonts.cairo(color: const Color(0xFF7A6F73))),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final ok = await adminData.deleteCategory(id);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        ok ? 'تم حذف تصنيف "$name" بنجاح' : 'تعذر حذف التصنيف'),
-                    backgroundColor: ok ? AppColors.success : AppColors.error,
-                  ),
-                );
-              }
-            },
-            child: Text('تأكيد الحذف',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('إلغاء',
+                    style: GoogleFonts.cairo(color: const Color(0xFF7A6F73))),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final ok = await adminData.deleteCategory(id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(ok
+                            ? 'تم حذف تصنيف "$name" بنجاح'
+                            : 'تعذر حذف التصنيف'),
+                        backgroundColor:
+                            ok ? AppColors.success : AppColors.error,
+                      ),
+                    );
+                  }
+                },
+                child: Text('تأكيد الحذف',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),
@@ -984,6 +1008,18 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       return true;
     }).toList();
 
+    final filterKey = '$_selectedStatusFilter|$globalSearch';
+    if (filterKey != _lastFilterKey) {
+      _lastFilterKey = filterKey;
+      _currentPage = 1;
+    }
+
+    final pagination = PaginationSlice.fromList(
+      filteredCategories,
+      currentPage: _currentPage,
+      itemsPerPage: _itemsPerPage,
+    );
+
     final totalCount = adminData.categories.length;
     final activeCount =
         adminData.categories.where((c) => c['is_active'] != false).length;
@@ -1011,7 +1047,7 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
           const SizedBox(height: 20),
 
           // 4. Categories Data Table (Exact table design with all columns)
-          _buildCategoriesTable(context, filteredCategories, adminData),
+          _buildCategoriesTable(context, pagination, adminData),
         ],
       ),
     );
@@ -1070,8 +1106,8 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
           icon: Icons.verified_outlined,
           iconColor: const Color(0xFF059669),
           iconBg: const Color(0xFFECFDF5),
-          isSelected: _selectedStatusFilter == 'التصنيفات النشطة فقط',
-          onTap: () => setState(() => _selectedStatusFilter = 'التصنيفات النشطة فقط'),
+          isSelected: _selectedStatusFilter == 'نشط فقط',
+          onTap: () => setState(() => _selectedStatusFilter = 'نشط فقط'),
         ),
         // Card 3: التصنيفات المعطلة أو المؤرشفة
         AdminStatCard(
@@ -1080,8 +1116,8 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
           icon: Icons.pause_circle_outline,
           iconColor: const Color(0xFF8A7F84),
           iconBg: const Color(0xFFF4EFEA),
-          isSelected: _selectedStatusFilter == 'التصنيفات المعطلة فقط',
-          onTap: () => setState(() => _selectedStatusFilter = 'التصنيفات المعطلة فقط'),
+          isSelected: _selectedStatusFilter == 'معطل فقط',
+          onTap: () => setState(() => _selectedStatusFilter = 'معطل فقط'),
         ),
       ],
     );
@@ -1092,65 +1128,25 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       BuildContext context, AdminDashboardProvider adminData) {
     return Align(
       alignment: Alignment.centerRight,
-      child: Container(
-        height: 44,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFEFE9E0)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.015),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.filter_alt_outlined,
-                size: 18, color: AppColors.burgundy),
-            const SizedBox(width: 8),
-            Text(
-              'تصفية الحالة:',
-              style: GoogleFonts.cairo(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.bold,
-                  color: const Color(0xFF4B5563)),
-            ),
-            const SizedBox(width: 8),
-            DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
-                value: _selectedStatusFilter,
-                icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                    size: 18, color: Color(0xFF8A7F84)),
-                style: GoogleFonts.cairo(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: const Color(0xFF2E2527),
-                ),
-                items: const [
-                  DropdownMenuItem(
-                      value: 'جميع الحالات (الكل)',
-                      child: Text('جميع الحالات (الكل)')),
-                  DropdownMenuItem(
-                      value: 'نشط فقط', child: Text('نشط فقط (المفعلة)')),
-                  DropdownMenuItem(
-                      value: 'معطل فقط', child: Text('معطل فقط (المؤرشفة)')),
-                ],
-                onChanged: (val) {
-                  if (val != null) {
-                    setState(() {
-                      _selectedStatusFilter = val;
-                    });
-                  }
-                },
-              ),
-            ),
-          ],
-        ),
+      child: AdminFilterDropdown<String>(
+        value: _selectedStatusFilter,
+        icon: Icons.filter_alt_outlined,
+        isActive: _selectedStatusFilter != 'جميع الحالات (الكل)',
+        items: const [
+          DropdownMenuItem(
+              value: 'جميع الحالات (الكل)', child: Text('جميع الحالات (الكل)')),
+          DropdownMenuItem(
+              value: 'نشط فقط', child: Text('نشط فقط (المفعلة)')),
+          DropdownMenuItem(
+              value: 'معطل فقط', child: Text('معطل فقط (المؤرشفة)')),
+        ],
+        onChanged: (val) {
+          if (val != null) {
+            setState(() {
+              _selectedStatusFilter = val;
+            });
+          }
+        },
       ),
     );
   }
@@ -1158,9 +1154,10 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
   // 4. Categories Data Table
   Widget _buildCategoriesTable(
     BuildContext context,
-    List<Map<String, dynamic>> categories,
+    PaginationSlice<Map<String, dynamic>> pagination,
     AdminDashboardProvider adminData,
   ) {
+    final categories = pagination.pageItems;
     if (categories.isEmpty) {
       return Container(
         width: double.infinity,
@@ -1227,8 +1224,10 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
+        child: Column(
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
             final tableWidth =
                 constraints.maxWidth > 950 ? constraints.maxWidth : 950.0;
 
@@ -1639,6 +1638,13 @@ class _AdminCategoriesScreenState extends State<AdminCategoriesScreen> {
               ),
             );
           },
+        ),
+            TablePaginationBar(
+              pagination: pagination,
+              itemLabel: 'تصنيف',
+              onPageChanged: (page) => setState(() => _currentPage = page),
+            ),
+          ],
         ),
       ),
     );

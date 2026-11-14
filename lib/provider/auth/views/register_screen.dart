@@ -392,13 +392,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
           const SizedBox(height: 6),
           TextFormField(
             controller: _businessNameController,
-            
             decoration: _inputDecoration(
               hint: 'مثال: مؤسسة الأندلس لتنسيق المناسبات والأفراح',
               icon: Icons.badge_outlined,
+              suffixIcon: const Icon(
+                Icons.business_outlined,
+                size: 20,
+                color: Color(0xFF6F6265),
+              ),
             ),
-            
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'يرجى إدخال اسم النشاط' : null,
+            validator: (v) => (v == null || v.trim().isEmpty)
+                ? 'يرجى إدخال اسم النشاط'
+                : null,
           ),
           const SizedBox(height: 16),
 
@@ -413,19 +418,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     children: [
                       _buildFieldLabel('البريد الإلكتروني '),
                       const SizedBox(height: 6),
-                      TextFormField(
-                        controller: _emailController,
-                        textDirection: TextDirection.ltr,
-                        decoration: _inputDecoration(
-                          hint: 'contact@alandalus.com',
-                          icon: Icons.alternate_email,
-                        ),
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'يرجى إدخال البريد';
-                          if (!v.contains('@')) return 'صيغة البريد غير صحيحة';
-                          return null;
-                        },
-                      ),
+                      _buildEmailField(),
                     ],
                   ),
                 ),
@@ -445,19 +438,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           else ...[
             _buildFieldLabel('البريد الإلكتروني للعمل'),
             const SizedBox(height: 6),
-            TextFormField(
-              controller: _emailController,
-              textDirection: TextDirection.ltr,
-              decoration: _inputDecoration(
-                hint: 'contact@alandalus.com',
-                icon: Icons.alternate_email,
-              ),
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'يرجى إدخال البريد';
-                if (!v.contains('@')) return 'صيغة البريد غير صحيحة';
-                return null;
-              },
-            ),
+            _buildEmailField(),
             const SizedBox(height: 16),
             _buildFieldLabel('رقم الهاتف / الواتساب'),
             const SizedBox(height: 6),
@@ -780,6 +761,28 @@ class _RegisterScreenState extends State<RegisterScreen> {
         fontWeight: FontWeight.w600,
         color: const Color(0xFF2E2527),
       ),
+    );
+  }
+
+  Widget _buildEmailField() {
+    return TextFormField(
+      controller: _emailController,
+      textDirection: TextDirection.ltr,
+      keyboardType: TextInputType.emailAddress,
+      decoration: _inputDecoration(
+        hint: 'contact@alandalus.com',
+        icon: Icons.alternate_email,
+        suffixIcon: const Icon(
+          Icons.email_outlined,
+          size: 20,
+          color: Color(0xFF6F6265),
+        ),
+      ),
+      validator: (v) {
+        if (v == null || v.trim().isEmpty) return 'يرجى إدخال البريد';
+        if (!v.contains('@')) return 'صيغة البريد غير صحيحة';
+        return null;
+      },
     );
   }
 

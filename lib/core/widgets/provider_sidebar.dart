@@ -66,7 +66,7 @@ class ProviderSidebar extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'خِدمتي',
+                      "لمة",
                         style: AppTextStyles.headlineSmall.copyWith(
                           fontWeight: FontWeight.w800,
                           color: AppColors.textPrimary,

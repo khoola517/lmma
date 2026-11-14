@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
+import 'package:khadematy_web/core/widgets/table_pagination_bar.dart';
 import 'package:khadematy_web/admin/dashboard/providers/admin_dashboard_provider.dart';
 import 'package:khadematy_web/admin/shell/providers/admin_navigation_provider.dart';
+import 'package:khadematy_web/admin/shell/views/admin_filter_controls.dart';
 import 'package:khadematy_web/admin/shell/views/admin_page_header_card.dart';
 import 'package:khadematy_web/admin/shell/views/admin_stat_card.dart';
 
@@ -19,6 +22,9 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
   String _selectedStatusFilter = 'all';
   String _selectedDateFilter = 'هذا الشهر (أكتوبر 2026)';
   final TextEditingController _searchController = TextEditingController();
+  int _currentPage = 1;
+  static const int _itemsPerPage = 5;
+  String _lastFilterKey = '';
 
   @override
   void initState() {
@@ -253,113 +259,118 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
         actionsPadding:
             const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إغلاق',
-                style: GoogleFonts.cairo(color: const Color(0xFF7A6F73))),
-          ),
-          OutlinedButton(
-            onPressed: () async {
-              final notes = resolutionController.text.trim();
-              Navigator.pop(ctx);
-              final ok = await adminData.updateComplaintStatus(
-                id: c['id'].toString(),
-                status: 'rejected',
-                resolutionNotes: notes.isNotEmpty
-                    ? notes
-                    : 'تم رفض الشكوى بعد المراجعة والتحقق',
-              );
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        ok
-                            ? 'تم رفض الشكوى وتحديث حالتها في النظام'
-                            : 'تم تحديث الحالة محلياً',
-                        style: GoogleFonts.cairo()),
-                    backgroundColor: const Color(0xFFDC2626),
-                  ),
-                );
-              }
-            },
-            style: OutlinedButton.styleFrom(
-              foregroundColor: const Color(0xFFDC2626),
-              side: const BorderSide(color: Color(0xFFFECDD3)),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text('رفض الشكوى',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
-          ),
-          if (c['status'] == 'pending' || c['status'] == 'جديدة') ...[
-            OutlinedButton(
-              onPressed: () async {
-                final notes = resolutionController.text.trim();
-                Navigator.pop(ctx);
-                final ok = await adminData.updateComplaintStatus(
-                  id: c['id'].toString(),
-                  status: 'in_progress',
-                  resolutionNotes: notes,
-                );
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                          ok
-                              ? 'تم تحويل الشكوى إلى قيد المعالجة'
-                              : 'تم التحديث بنجاح',
-                          style: GoogleFonts.cairo()),
-                      backgroundColor: const Color(0xFF2563EB),
-                    ),
-                  );
-                }
-              },
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF2563EB),
-                side: const BorderSide(color: Color(0xFFBFDBFE)),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8)),
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('إغلاق',
+                    style: GoogleFonts.cairo(color: const Color(0xFF7A6F73))),
               ),
-              child: Text('بدء المعالجة',
-                  style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
-            ),
-          ],
-          ElevatedButton(
-            onPressed: () async {
-              final notes = resolutionController.text.trim();
-              Navigator.pop(ctx);
-              final ok = await adminData.updateComplaintStatus(
-                id: c['id'].toString(),
-                status: 'resolved',
-                resolutionNotes: notes.isNotEmpty
-                    ? notes
-                    : 'تم حل الشكوى وتسوية النزاع ودياً',
-              );
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                        ok
-                            ? 'تم حل الشكوى بنجاح وتوثيق القرار في Supabase'
-                            : 'تم تحديث الحالة بنجاح',
-                        style: GoogleFonts.cairo()),
-                    backgroundColor: const Color(0xFF059669),
+              OutlinedButton(
+                onPressed: () async {
+                  final notes = resolutionController.text.trim();
+                  Navigator.pop(ctx);
+                  final ok = await adminData.updateComplaintStatus(
+                    id: c['id'].toString(),
+                    status: 'rejected',
+                    resolutionNotes: notes.isNotEmpty
+                        ? notes
+                        : 'تم رفض الشكوى بعد المراجعة والتحقق',
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            ok
+                                ? 'تم رفض الشكوى وتحديث حالتها في النظام'
+                                : 'تم تحديث الحالة محلياً',
+                            style: GoogleFonts.cairo()),
+                        backgroundColor: const Color(0xFFDC2626),
+                      ),
+                    );
+                  }
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: const Color(0xFFDC2626),
+                  side: const BorderSide(color: Color(0xFFFECDD3)),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text('رفض الشكوى',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              ),
+              if (c['status'] == 'pending' || c['status'] == 'جديدة')
+                OutlinedButton(
+                  onPressed: () async {
+                    final notes = resolutionController.text.trim();
+                    Navigator.pop(ctx);
+                    final ok = await adminData.updateComplaintStatus(
+                      id: c['id'].toString(),
+                      status: 'in_progress',
+                      resolutionNotes: notes,
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                              ok
+                                  ? 'تم تحويل الشكوى إلى قيد المعالجة'
+                                  : 'تم التحديث بنجاح',
+                              style: GoogleFonts.cairo()),
+                          backgroundColor: const Color(0xFF2563EB),
+                        ),
+                      );
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF2563EB),
+                    side: const BorderSide(color: Color(0xFFBFDBFE)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF059669),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            child: Text('حل الشكوى بنجاح',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                  child: Text('بدء المعالجة',
+                      style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+                ),
+              ElevatedButton(
+                onPressed: () async {
+                  final notes = resolutionController.text.trim();
+                  Navigator.pop(ctx);
+                  final ok = await adminData.updateComplaintStatus(
+                    id: c['id'].toString(),
+                    status: 'resolved',
+                    resolutionNotes: notes.isNotEmpty
+                        ? notes
+                        : 'تم حل الشكوى وتسوية النزاع ودياً',
+                  );
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            ok
+                                ? 'تم حل الشكوى بنجاح وتوثيق القرار '
+                                : 'تم تحديث الحالة بنجاح',
+                            style: GoogleFonts.cairo()),
+                        backgroundColor: const Color(0xFF059669),
+                      ),
+                    );
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF059669),
+                  foregroundColor: Colors.white,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                child: Text('حل الشكوى بنجاح',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),
@@ -455,6 +466,19 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
       return true;
     }).toList();
 
+    final filterKey =
+        '$_selectedStatusFilter|$_selectedDateFilter|${_searchController.text}|$globalSearch';
+    if (filterKey != _lastFilterKey) {
+      _lastFilterKey = filterKey;
+      _currentPage = 1;
+    }
+
+    final pagination = PaginationSlice.fromList(
+      filteredComplaints,
+      currentPage: _currentPage,
+      itemsPerPage: _itemsPerPage,
+    );
+
     // Stats counts strictly from live Supabase data
     final totalCount = adminData.totalComplaintsCount;
     final newCount = adminData.newComplaintsCount;
@@ -483,7 +507,7 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
           const SizedBox(height: 20),
 
           // 4. Complaints Data Table Card
-          _buildComplaintsTable(context, filteredComplaints, adminData),
+          _buildComplaintsTable(context, pagination, adminData),
         ],
       ),
     );
@@ -548,8 +572,9 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
           activeBorderColor: const Color(0xFF2563EB),
           onTap: () {
             setState(() {
-              _selectedStatusFilter =
-                  _selectedStatusFilter == 'in_progress' ? 'all' : 'in_progress';
+              _selectedStatusFilter = _selectedStatusFilter == 'in_progress'
+                  ? 'all'
+                  : 'in_progress';
             });
           },
         ),
@@ -575,86 +600,26 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
     );
   }
 
-  // 3. Filter Bar (Search Field, Month Selector, Status Filter Dropdown & Refresh Button)
+  // 3. Filter Bar (Month Selector, Status Filter Dropdown & Export Button)
   Widget _buildFilterBar(AdminDashboardProvider adminData,
       List<Map<String, dynamic>> filteredComplaints) {
-    return Container(
+    return SizedBox(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      // decoration: BoxDecoration(
-      //   //color: Colors.white,
-      //   borderRadius: BorderRadius.circular(16),
-      //   border: Border.all(color: const Color(0xFFF0EBE8), width: 1.2),
-      //   boxShadow: [
-      //     BoxShadow(
-      //       color: Colors.black.withOpacity(0.015),
-      //       blurRadius: 8,
-      //       offset: const Offset(0, 3),
-      //     ),
-      //   ],
-      // ),
-      child: Row(
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 10,
+        alignment: WrapAlignment.spaceBetween,
+        crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          // 1. Search Box on Right (RTL)
-          // Expanded(
-          //   child: Container(
-          //     height: 42,
-          //     decoration: BoxDecoration(
-          //       color: const Color(0xFFFAFAF9),
-          //       borderRadius: BorderRadius.circular(10),
-          //       border: Border.all(color: const Color(0xFFE5E7EB)),
-          //     ),
-          //     child: TextField(
-          //       controller: _searchController,
-          //       onChanged: (_) => setState(() {}),
-          //       style: GoogleFonts.cairo(
-          //           fontSize: 13, color: const Color(0xFF2E2527)),
-          //       decoration: InputDecoration(
-          //         hintText: 'بحث سريع في الشكاوى...',
-          //         hintStyle: GoogleFonts.cairo(
-          //             fontSize: 12.5, color: const Color(0xFF9CA3AF)),
-          //         prefixIcon: const Icon(Icons.search,
-          //             size: 20, color: Color(0xFF9CA3AF)),
-          //         suffixIcon: _searchController.text.isNotEmpty
-          //             ? IconButton(
-          //                 icon: const Icon(Icons.clear,
-          //                     size: 16, color: Color(0xFF9CA3AF)),
-          //                 onPressed: () {
-          //                   _searchController.clear();
-          //                   setState(() {});
-          //                 },
-          //               )
-          //             : null,
-          //         border: InputBorder.none,
-          //         contentPadding: const EdgeInsets.symmetric(vertical: 10),
-          //       ),
-          //     ),
-          //   ),
-          // ),
-
-          // const SizedBox(width: 12),
-
-          // 2. Month / Date Filter
-          Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFAFAF9),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<String>(
+          Wrap(
+            spacing: 12,
+            runSpacing: 10,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              AdminFilterDropdown<String>(
                 value: _selectedDateFilter,
-                icon: const Icon(Icons.keyboard_arrow_down,
-                    size: 18, color: Color(0xFF6B7280)),
-                style: GoogleFonts.cairo(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF2E2527)),
-                onChanged: (val) {
-                  if (val != null) setState(() => _selectedDateFilter = val);
-                },
+                icon: Icons.calendar_today_outlined,
+                isActive: _selectedDateFilter != 'هذا الشهر (أكتوبر 2026)',
                 items: const [
                   DropdownMenuItem(
                       value: 'هذا الشهر (أكتوبر 2026)',
@@ -665,80 +630,36 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
                   DropdownMenuItem(
                       value: 'كافة الفترات', child: Text('كافة الفترات')),
                 ],
+                onChanged: (val) {
+                  if (val != null) setState(() => _selectedDateFilter = val);
+                },
               ),
-            ),
+              AdminFilterDropdown<String>(
+                value: _selectedStatusFilter,
+                icon: Icons.filter_alt_outlined,
+                isActive: _selectedStatusFilter != 'all',
+                items: const [
+                  DropdownMenuItem(value: 'all', child: Text('جميع الحالات')),
+                  DropdownMenuItem(
+                      value: 'pending', child: Text('شكاوى جديدة')),
+                  DropdownMenuItem(
+                      value: 'in_progress', child: Text('قيد المعالجة')),
+                  DropdownMenuItem(
+                      value: 'resolved', child: Text('تم حلها بنجاح')),
+                  DropdownMenuItem(value: 'rejected', child: Text('مرفوضة')),
+                ],
+                onChanged: (val) {
+                  if (val != null) {
+                    setState(() => _selectedStatusFilter = val);
+                  }
+                },
+              ),
+            ],
           ),
-
-          const SizedBox(width: 12),
-
-          // 3. Status Filter Dropdown
-          Container(
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFAFAF9),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE5E7EB)),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'تصفية حسب الحالة:',
-                  style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF4B5563)),
-                ),
-                const SizedBox(width: 6),
-                DropdownButtonHideUnderline(
-                  child: DropdownButton<String>(
-                    value: _selectedStatusFilter,
-                    icon: const Icon(Icons.keyboard_arrow_down,
-                        size: 18, color: Color(0xFF6B7280)),
-                    style: GoogleFonts.cairo(
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFF2E2527)),
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() => _selectedStatusFilter = val);
-                      }
-                    },
-                    items: const [
-                      DropdownMenuItem(
-                          value: 'all', child: Text('جميع الحالات')),
-                      DropdownMenuItem(
-                          value: 'pending', child: Text('شكاوى جديدة')),
-                      DropdownMenuItem(
-                          value: 'in_progress', child: Text('قيد المعالجة')),
-                      DropdownMenuItem(
-                          value: 'resolved', child: Text('تم حلها بنجاح')),
-                      DropdownMenuItem(
-                          value: 'rejected', child: Text('مرفوضة')),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Export Button
-          OutlinedButton.icon(
-            onPressed: () => _exportComplaintsReport(filteredComplaints),
-            icon: const Icon(Icons.file_download_outlined, size: 16),
-            label: Text('تصدير',
-                style: GoogleFonts.cairo(
-                    fontSize: 12.5, fontWeight: FontWeight.bold)),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.burgundy,
-              side: const BorderSide(color: Color(0xFFE5E7EB)),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10)),
-            ),
+          AdminFilterActionButton(
+            label: 'تصدير',
+            icon: Icons.file_download_outlined,
+            onTap: () => _exportComplaintsReport(filteredComplaints),
           ),
         ],
       ),
@@ -748,9 +669,10 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
   // 4. Complaints Data Table Card
   Widget _buildComplaintsTable(
     BuildContext context,
-    List<Map<String, dynamic>> complaints,
+    PaginationSlice<Map<String, dynamic>> pagination,
     AdminDashboardProvider adminData,
   ) {
+    final complaints = pagination.pageItems;
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -767,118 +689,133 @@ class _AdminComplaintsScreenState extends State<AdminComplaintsScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final tableWidth =
-                constraints.maxWidth < 960 ? 960.0 : constraints.maxWidth;
+        child: Column(
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final tableWidth =
+                    constraints.maxWidth < 960 ? 960.0 : constraints.maxWidth;
 
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: SizedBox(
-                width: tableWidth,
-                child: Column(
-                  children: [
-                    // Table Header Row
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 14),
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFFAFAF9),
-                        border: Border(
-                            bottom: BorderSide(
-                                color: Color(0xFFF0EBE8), width: 1.2)),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                              flex: 2,
-                              child: _buildHeaderCell('رقم الشكوى / الحجز')),
-                          Expanded(
-                              flex: 3,
-                              child: _buildHeaderCell('العميل الشاكي')),
-                          Expanded(
-                              flex: 3,
-                              child:
-                                  _buildHeaderCell('مقدم الخدمة المشكو بحقه')),
-                          Expanded(
-                              flex: 4,
-                              child: _buildHeaderCell('نوع وموضوع الشكوى')),
-                          Expanded(
-                              flex: 2,
-                              child: _buildHeaderCell('تاريخ التقديم')),
-                          Expanded(flex: 2, child: _buildHeaderCell('الحالة')),
-                          Expanded(
-                              flex: 2,
-                              child: _buildHeaderCell('الإجراء',
-                                  alignment: Alignment.centerLeft)),
-                        ],
-                      ),
-                    ),
-
-                    // Loading State
-                    if (adminData.isLoading && complaints.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 60),
-                        child: Center(
-                          child: CircularProgressIndicator(
-                              color: AppColors.burgundy),
-                        ),
-                      )
-                    // Empty State
-                    else if (complaints.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 60, horizontal: 20),
-                        child: Center(
-                          child: Column(
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: tableWidth,
+                    child: Column(
+                      children: [
+                        // Table Header Row
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 14),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFAFAF9),
+                            border: Border(
+                                bottom: BorderSide(
+                                    color: Color(0xFFF0EBE8), width: 1.2)),
+                          ),
+                          child: Row(
                             children: [
-                              Container(
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFAF7F6),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: const Icon(Icons.inbox_outlined,
-                                    size: 40, color: Color(0xFFB0A5A8)),
-                              ),
-                              const SizedBox(height: 14),
-                              Text(
-                                'لا توجد شكاوى أو نزاعات مسجلة تطابق خيارات التصفية',
-                                style: GoogleFonts.cairo(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF5A5054),
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                'سيتم عرض أي شكاوى جديدة مقدمة من العملاء أو المزودين هنا فور تسجيلها.',
-                                style: GoogleFonts.cairo(
-                                    fontSize: 12.5,
-                                    color: const Color(0xFF8A7F84)),
-                              ),
+                              Expanded(
+                                  flex: 2,
+                                  child:
+                                      _buildHeaderCell('رقم الشكوى / الحجز')),
+                              Expanded(
+                                  flex: 3,
+                                  child: _buildHeaderCell('العميل الشاكي')),
+                              Expanded(
+                                  flex: 3,
+                                  child: _buildHeaderCell(
+                                      'مقدم الخدمة المشكو بحقه')),
+                              Expanded(
+                                  flex: 4,
+                                  child: _buildHeaderCell('نوع وموضوع الشكوى')),
+                              Expanded(
+                                  flex: 2,
+                                  child: _buildHeaderCell('تاريخ التقديم')),
+                              Expanded(
+                                  flex: 2, child: _buildHeaderCell('الحالة')),
+                              Expanded(
+                                  flex: 2,
+                                  child: _buildHeaderCell('الإجراء',
+                                      alignment: Alignment.centerLeft)),
                             ],
                           ),
                         ),
-                      )
-                    // Rows
-                    else
-                      ListView.separated(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        itemCount: complaints.length,
-                        separatorBuilder: (_, __) => const Divider(
-                            height: 1, thickness: 1, color: Color(0xFFF5EFEF)),
-                        itemBuilder: (context, index) {
-                          final c = complaints[index];
-                          return _buildTableRow(context, c, index, adminData);
-                        },
-                      ),
-                  ],
-                ),
+
+                        // Loading State
+                        if (adminData.isLoading && adminData.complaints.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 60),
+                            child: Center(
+                              child: CircularProgressIndicator(
+                                  color: AppColors.burgundy),
+                            ),
+                          )
+                        // Empty State
+                        else if (complaints.isEmpty)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 60, horizontal: 20),
+                            child: Center(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFAF7F6),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Icon(Icons.inbox_outlined,
+                                        size: 40, color: Color(0xFFB0A5A8)),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    'لا توجد شكاوى أو نزاعات مسجلة تطابق خيارات التصفية',
+                                    style: GoogleFonts.cairo(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: const Color(0xFF5A5054),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'سيتم عرض أي شكاوى جديدة مقدمة من العملاء أو المزودين هنا فور تسجيلها.',
+                                    style: GoogleFonts.cairo(
+                                        fontSize: 12.5,
+                                        color: const Color(0xFF8A7F84)),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          )
+                        // Rows
+                        else
+                          ListView.separated(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            itemCount: complaints.length,
+                            separatorBuilder: (_, __) => const Divider(
+                                height: 1,
+                                thickness: 1,
+                                color: Color(0xFFF5EFEF)),
+                            itemBuilder: (context, index) {
+                              final c = complaints[index];
+                              return _buildTableRow(
+                                  context, c, index, adminData);
+                            },
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            if (pagination.totalFiltered > 0)
+              TablePaginationBar(
+                pagination: pagination,
+                itemLabel: 'شكوى',
+                onPageChanged: (page) => setState(() => _currentPage = page),
               ),
-            );
-          },
+          ],
         ),
       ),
     );

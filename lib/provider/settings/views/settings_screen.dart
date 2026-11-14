@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/theme/app_text_styles.dart';
 import 'package:khadematy_web/core/widgets/custom_button.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
 import 'package:khadematy_web/core/widgets/custom_card.dart';
 import 'package:khadematy_web/core/services/live_notification_banner_service.dart';
 import 'package:khadematy_web/provider/auth/providers/auth_provider.dart';
@@ -10,8 +11,6 @@ import 'package:khadematy_web/provider/profile/providers/profile_provider.dart';
 import 'package:khadematy_web/provider/bookings/providers/bookings_provider.dart';
 import 'package:khadematy_web/provider/settings/models/provider_settings_model.dart';
 import 'package:khadematy_web/provider/shell/views/provider_page_header_card.dart';
-import 'package:khadematy_web/provider/shell/views/provider_metric_card.dart';
-import 'package:khadematy_web/provider/shell/views/provider_stats_row.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -276,15 +275,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ),
             ),
             actions: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                mainAxisAlignment: MainAxisAlignment.end,
+              DialogActionsRow(
                 children: [
                   TextButton(
                     onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
                     child: Text('إلغاء', style: AppTextStyles.labelMedium),
                   ),
-                  const SizedBox(width: 8),
                   CustomButton(
                     text: isSubmitting ? 'جاري التحديث...' : 'تأكيد التغيير',
                     isLoading: isSubmitting,

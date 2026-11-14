@@ -3,8 +3,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/widgets/custom_button.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
+import 'package:khadematy_web/core/widgets/table_pagination_bar.dart';
 import 'package:khadematy_web/admin/dashboard/providers/admin_dashboard_provider.dart';
 import 'package:khadematy_web/admin/shell/providers/admin_navigation_provider.dart';
+import 'package:khadematy_web/admin/shell/views/admin_filter_controls.dart';
 import 'package:khadematy_web/admin/shell/views/admin_page_header_card.dart';
 import 'package:khadematy_web/admin/shell/views/admin_stat_card.dart';
 
@@ -18,6 +21,9 @@ class AdminServicesScreen extends StatefulWidget {
 class _AdminServicesScreenState extends State<AdminServicesScreen> {
   String _selectedCategory = 'الكل';
   String _selectedStatus = 'الكل'; // 'الكل', 'نشطة', 'متوقفة'
+  int _currentPage = 1;
+  static const int _itemsPerPage = 5;
+  String _lastFilterKey = '';
 
   void _showServiceDetails(BuildContext context, Map<String, dynamic> s) {
     final name = s['name'] as String? ?? 'تفاصيل الخدمة';
@@ -143,33 +149,37 @@ class _AdminServicesScreenState extends State<AdminServicesScreen> {
               fontSize: 13, height: 1.6, color: const Color(0xFF5A5054)),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text('إلغاء',
-                style: GoogleFonts.cairo(color: const Color(0xFF7A6F73))),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.error,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8)),
-            ),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await adminData.deleteService(id);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('تم حذف خدمة "$name" بنجاح',
-                        style: GoogleFonts.cairo()),
-                    backgroundColor: AppColors.error,
-                  ),
-                );
-              }
-            },
-            child: Text('تأكيد الحذف',
-                style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('إلغاء',
+                    style: GoogleFonts.cairo(color: const Color(0xFF7A6F73))),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8)),
+                ),
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  await adminData.deleteService(id);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('تم حذف خدمة "$name" بنجاح',
+                            style: GoogleFonts.cairo()),
+                        backgroundColor: AppColors.error,
+                      ),
+                    );
+                  }
+                },
+                child: Text('تأكيد الحذف',
+                    style: GoogleFonts.cairo(fontWeight: FontWeight.bold)),
+              ),
+            ],
           ),
         ],
       ),
@@ -236,6 +246,18 @@ class _AdminServicesScreenState extends State<AdminServicesScreen> {
       return true;
     }).toList();
 
+    final filterKey = '$_selectedCategory|$_selectedStatus|$globalSearch';
+    if (filterKey != _lastFilterKey) {
+      _lastFilterKey = filterKey;
+      _currentPage = 1;
+    }
+
+    final pagination = PaginationSlice.fromList(
+      filteredServices,
+      currentPage: _currentPage,
+      itemsPerPage: _itemsPerPage,
+    );
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
       child: Column(
@@ -263,7 +285,7 @@ class _AdminServicesScreenState extends State<AdminServicesScreen> {
           const SizedBox(height: 20),
 
           // 4. Services Data Table (Exact table design with all columns)
-          _buildServicesTable(context, filteredServices, adminData),
+          _buildServicesTable(context, pagination, adminData),
         ],
       ),
     );
@@ -321,96 +343,67 @@ class _AdminServicesScreenState extends State<AdminServicesScreen> {
           .where((c) => c.isNotEmpty)
     ];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      // decoration: BoxDecoration(
-      //   color: Colors.white,
-      //   borderRadius: BorderRadius.circular(16),
-      //   border: Border.all(color: const Color(0xFFEFE9E0)),
-      //   boxShadow: [
-      //     BoxShadow(
-      //       color: Colors.black.withOpacity(0.015),
-      //       blurRadius: 8,
-      //       offset: const Offset(0, 2),
-      //     ),
-      //   ],
-      // ),
-      child: Row(
-        children: [
-          // Dropdown 1: جميع الحالات
-          _buildFilterDropdown(
-            value: _selectedStatus == 'الكل' ? 'جميع الحالات' : _selectedStatus,
-            items: const ['جميع الحالات', 'نشطة', 'متوقفة'],
-            onChanged: (val) {
-              if (val != null) {
-                setState(() {
-                  _selectedStatus = val == 'جميع الحالات' ? 'الكل' : val;
-                });
-              }
-            },
-          ),
-          const SizedBox(width: 12),
+    final statusValue =
+        _selectedStatus == 'الكل' ? 'جميع الحالات' : _selectedStatus;
+    final categoryValue =
+        _selectedCategory == 'الكل' ? 'جميع التصنيفات' : _selectedCategory;
+    final categoryItems = [
+      'جميع التصنيفات',
+      ...categories.where((c) => c != 'الكل'),
+    ];
 
-          // Dropdown 2: جميع التصنيفات
-          _buildFilterDropdown(
-            value: _selectedCategory == 'الكل'
-                ? 'جميع التصنيفات'
-                : _selectedCategory,
-            items: ['جميع التصنيفات', ...categories.where((c) => c != 'الكل')],
-            onChanged: (val) {
-              if (val != null) {
-                setState(() {
-                  _selectedCategory = val == 'جميع التصنيفات' ? 'الكل' : val;
-                });
-              }
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterDropdown({
-    required String value,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFAF7F2),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5DDD2)),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: items.contains(value) ? value : items.first,
-          icon: const Icon(Icons.keyboard_arrow_down,
-              size: 18, color: Color(0xFF8A7F84)),
-          style: GoogleFonts.cairo(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: const Color(0xFF4A3E42),
-          ),
-          items: items.map((item) {
-            return DropdownMenuItem<String>(
-              value: item,
-              child: Text(item),
-            );
-          }).toList(),
-          onChanged: onChanged,
+    return Wrap(
+      spacing: 12,
+      runSpacing: 10,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        AdminFilterDropdown<String>(
+          value: statusValue,
+          icon: Icons.filter_alt_outlined,
+          isActive: _selectedStatus != 'الكل',
+          items: const ['جميع الحالات', 'نشطة', 'متوقفة']
+              .map((item) => DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(item),
+                  ))
+              .toList(),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() {
+                _selectedStatus = val == 'جميع الحالات' ? 'الكل' : val;
+              });
+            }
+          },
         ),
-      ),
+        AdminFilterDropdown<String>(
+          value: categoryValue,
+          icon: Icons.category_outlined,
+          isActive: _selectedCategory != 'الكل',
+          items: categoryItems
+              .map((item) => DropdownMenuItem<String>(
+                    value: item,
+                    child: Text(item),
+                  ))
+              .toList(),
+          onChanged: (val) {
+            if (val != null) {
+              setState(() {
+                _selectedCategory = val == 'جميع التصنيفات' ? 'الكل' : val;
+              });
+            }
+          },
+        ),
+      ],
     );
   }
 
   // 3. Services Data Table
   Widget _buildServicesTable(
     BuildContext context,
-    List<Map<String, dynamic>> services,
+    PaginationSlice<Map<String, dynamic>> pagination,
     AdminDashboardProvider adminData,
   ) {
+    final services = pagination.pageItems;
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -424,161 +417,167 @@ class _AdminServicesScreenState extends State<AdminServicesScreen> {
           ),
         ],
       ),
-      child: Column(
-        children: [
-          // Table Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-            decoration: const BoxDecoration(
-              color: Color(0xFFFCFAF7),
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: Column(
+          children: [
+            // Table Header
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: const BoxDecoration(
+                color: Color(0xFFFCFAF7),
+                border: Border(
+                  bottom: BorderSide(color: Color(0xFFEEE6DC)),
+                ),
               ),
-              border: Border(
-                bottom: BorderSide(color: Color(0xFFEEE6DC)),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 50,
+                    child: Center(
+                      child: Text(
+                        'صورة\nالخدمة',
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.cairo(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF8A7F84),
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    flex: 35,
+                    child: Text(
+                      'اسم الخدمة',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8A7F84),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 18,
+                    child: Center(
+                      child: Text(
+                        'التصنيف',
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF8A7F84),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 22,
+                    child: Text(
+                      'مقدم الخدمة',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8A7F84),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 20,
+                    child: Text(
+                      'الموقع',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8A7F84),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 16,
+                    child: Text(
+                      'السعر',
+                      style: GoogleFonts.cairo(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF8A7F84),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 14,
+                    child: Center(
+                      child: Text(
+                        'الحالة',
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF8A7F84),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 14,
+                    child: Center(
+                      child: Text(
+                        'الإجراءات',
+                        style: GoogleFonts.cairo(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF8A7F84),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 50,
-                  child: Center(
-                    child: Text(
-                      'صورة\nالخدمة',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.cairo(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF8A7F84),
-                        height: 1.2,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  flex: 35,
-                  child: Text(
-                    'اسم الخدمة',
-                    style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF8A7F84),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 18,
-                  child: Center(
-                    child: Text(
-                      'التصنيف',
-                      style: GoogleFonts.cairo(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF8A7F84),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 22,
-                  child: Text(
-                    'مقدم الخدمة',
-                    style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF8A7F84),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 20,
-                  child: Text(
-                    'الموقع',
-                    style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF8A7F84),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 16,
-                  child: Text(
-                    'السعر',
-                    style: GoogleFonts.cairo(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF8A7F84),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 14,
-                  child: Center(
-                    child: Text(
-                      'الحالة',
-                      style: GoogleFonts.cairo(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF8A7F84),
-                      ),
-                    ),
-                  ),
-                ),
-                Expanded(
-                  flex: 14,
-                  child: Center(
-                    child: Text(
-                      'الإجراءات',
-                      style: GoogleFonts.cairo(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF8A7F84),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          // Table Rows
-          if (services.isEmpty)
-            Padding(
-              padding: const EdgeInsets.all(48),
-              child: Center(
-                child: Column(
-                  children: [
-                    const Icon(Icons.inbox_outlined,
-                        size: 40, color: Color(0xFFB5A89E)),
-                    const SizedBox(height: 12),
-                    Text(
-                      'لا توجد خدمات مطابقة للبحث أو التصنيف المختار',
-                      style: GoogleFonts.cairo(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF5A5054),
+            // Table Rows
+            if (services.isEmpty)
+              Padding(
+                padding: const EdgeInsets.all(48),
+                child: Center(
+                  child: Column(
+                    children: [
+                      const Icon(Icons.inbox_outlined,
+                          size: 40, color: Color(0xFFB5A89E)),
+                      const SizedBox(height: 12),
+                      Text(
+                        'لا توجد خدمات مطابقة للبحث أو التصنيف المختار',
+                        style: GoogleFonts.cairo(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF5A5054),
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+              )
+            else
+              ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: services.length,
+                separatorBuilder: (_, __) =>
+                    const Divider(height: 1, color: Color(0xFFF2ECE4)),
+                itemBuilder: (context, index) {
+                  final s = services[index];
+                  return _buildServiceTableRow(context, s, adminData);
+                },
               ),
-            )
-          else
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: services.length,
-              separatorBuilder: (_, __) =>
-                  const Divider(height: 1, color: Color(0xFFF2ECE4)),
-              itemBuilder: (context, index) {
-                final s = services[index];
-                return _buildServiceTableRow(context, s, adminData);
-              },
-            ),
-        ],
+
+            if (pagination.totalFiltered > 0)
+              TablePaginationBar(
+                pagination: pagination,
+                itemLabel: 'خدمة',
+                onPageChanged: (page) => setState(() => _currentPage = page),
+              ),
+          ],
+        ),
       ),
     );
   }

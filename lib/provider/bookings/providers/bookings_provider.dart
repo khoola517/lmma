@@ -164,6 +164,11 @@ class BookingsProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // 0. فحص وإلغاء أي حجوزات تجاوزت المهلة المحددة (24 ساعة) تلقائياً في Supabase
+      try {
+        await SupabaseConfig.client.rpc('auto_cancel_all_expired_bookings');
+      } catch (_) {}
+
       // 1. تحديد معرّف المزود المستهدف
       String? resolvedProviderId = providerId ?? _lastLoadedProviderId;
       if (resolvedProviderId == null || resolvedProviderId.isEmpty) {
@@ -300,6 +305,14 @@ class BookingsProvider extends ChangeNotifier {
       final index = _bookingRequests.indexWhere((r) => r.id == requestId);
       final targetReq = index != -1 ? _bookingRequests[index] : null;
 
+      // منع قبول أي طلب تجاوز مهلة الرد
+      if (targetReq != null && targetReq.isExpired) {
+        _errorMessage =
+            'تجاوز هذا الطلب المهلة المحددة للرد (${targetReq.defaultResponseHours} ساعة)، ولا يمكن قبوله.';
+        notifyListeners();
+        return false;
+      }
+
       // 1. تحديث Supabase أولاً والتأكد من نجاح العملية على الخادم
       if (isUuid) {
         if (targetReq != null && targetReq.bookingItemIds.isNotEmpty) {
@@ -432,6 +445,101 @@ class BookingsProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint('Unexpected error rejecting booking request: $e');
       _errorMessage = 'تعذر رفض الحجز في Supabase: $e';
+      notifyListeners();
+      return false;
+    } finally {
+      _activeActionBookingId = null;
+      notifyListeners();
+    }
+  }
+
+  /// إلغاء طلب حجز منتهي الصلاحية لتجاوز مهلة الرد (24 ساعة) مع إشعار العميل في الموبايل
+  Future<bool> cancelExpiredBooking(String requestId, {String? reason}) async {
+    _activeActionBookingId = requestId;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      final nowIso = DateTime.now().toIso8601String();
+      final cancelReason =
+          reason ?? 'تجاوز مهلة تأكيد الحجز ($_defaultResponseHours ساعة)';
+      final bool isUuid = RegExp(
+        r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$',
+      ).hasMatch(requestId);
+
+      final index = _bookingRequests.indexWhere((r) => r.id == requestId);
+      final req = index != -1 ? _bookingRequests[index] : null;
+
+      if (isUuid) {
+        bool rpcSuccess = false;
+        try {
+          final res = await SupabaseConfig.client.rpc(
+            'cancel_expired_booking',
+            params: {
+              'p_booking_id': requestId,
+              'p_reason': cancelReason,
+            },
+          );
+          rpcSuccess = res != null && res['success'] == true;
+        } catch (e) {
+          debugPrint('Note: RPC cancel_expired_booking failed, falling back to direct update: $e');
+        }
+
+        if (!rpcSuccess) {
+          if (req != null && req.bookingItemIds.isNotEmpty) {
+            await SupabaseConfig.client.from('booking_items').update({
+              'item_status': 'rejected',
+              'rejection_reason': cancelReason,
+              'responded_at': nowIso,
+            }).inFilter('id', req.bookingItemIds);
+          } else {
+            await SupabaseConfig.client.from('booking_items').update({
+              'item_status': 'rejected',
+              'rejection_reason': cancelReason,
+              'responded_at': nowIso,
+            }).eq('booking_id', requestId);
+          }
+
+          await SupabaseConfig.client.from('bookings').update({
+            'status': 'cancelled',
+            'updated_at': nowIso,
+            'notes': 'تم الإلغاء: $cancelReason',
+          }).eq('id', requestId);
+        }
+      }
+
+      if (index != -1 && req != null) {
+        _bookingRequests.removeAt(index);
+        req.status = BookingRequestStatus.rejected;
+
+        _confirmedBookings.insert(
+          0,
+          ConfirmedBookingModel(
+            id: req.id,
+            bookingNumber: req.code.replaceAll('#', ''),
+            customerName: req.customerName,
+            customerPhone: req.customerPhone,
+            customerLocation: req.location,
+            serviceName: req.serviceName,
+            eventType: req.eventType,
+            eventDate: req.eventDate,
+            eventDateString: req.eventDate,
+            eventTime: req.eventTime,
+            totalAmount: req.budget,
+            notes: 'ملغي: $cancelReason',
+            status: ConfirmedBookingStatus.cancelled,
+            customerId: req.customerId,
+            bookingItemIds: req.bookingItemIds,
+            createdAt: req.createdAt,
+          ),
+        );
+      }
+
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint('Unexpected error cancelling expired booking: $e');
+      _errorMessage = 'تعذر إلغاء الحجز: $e';
       notifyListeners();
       return false;
     } finally {

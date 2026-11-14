@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:khadematy_web/core/theme/app_colors.dart';
 import 'package:khadematy_web/core/theme/app_text_styles.dart';
 import 'package:khadematy_web/core/widgets/custom_button.dart';
+import 'package:khadematy_web/core/widgets/dialog_actions_row.dart';
 import 'package:khadematy_web/core/widgets/custom_text_field.dart';
 import 'package:khadematy_web/provider/reviews/models/review_model.dart';
 import 'package:khadematy_web/provider/reviews/providers/reviews_provider.dart';
@@ -141,56 +142,61 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
               actionsPadding:
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               actions: [
-                TextButton(
-                  onPressed: isSubmitting ? null : () => Navigator.pop(ctx),
-                  child: Text('إلغاء', style: AppTextStyles.labelMedium),
-                ),
-                CustomButton(
-                  text: isEditing ? 'حفظ التعديل' : 'إرسال الرد',
-                  isLoading: isSubmitting,
-                  variant: ButtonVariant.primary,
-                  onPressed: () async {
-                    final replyText = controller.text.trim();
-                    if (replyText.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('يرجى كتابة نص الرد قبل الإرسال'),
-                          backgroundColor: AppColors.error,
-                        ),
-                      );
-                      return;
-                    }
+                DialogActionsRow(
+                  children: [
+                    TextButton(
+                      onPressed:
+                          isSubmitting ? null : () => Navigator.pop(ctx),
+                      child: Text('إلغاء', style: AppTextStyles.labelMedium),
+                    ),
+                    CustomButton(
+                      text: isEditing ? 'حفظ التعديل' : 'إرسال الرد',
+                      isLoading: isSubmitting,
+                      variant: ButtonVariant.primary,
+                      onPressed: () async {
+                        final replyText = controller.text.trim();
+                        if (replyText.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('يرجى كتابة نص الرد قبل الإرسال'),
+                              backgroundColor: AppColors.error,
+                            ),
+                          );
+                          return;
+                        }
 
-                    setDialogState(() => isSubmitting = true);
-                    final success = await reviewsProvider.replyToReview(
-                      reviewId: review.id,
-                      replyText: replyText,
-                    );
+                        setDialogState(() => isSubmitting = true);
+                        final success = await reviewsProvider.replyToReview(
+                          reviewId: review.id,
+                          replyText: replyText,
+                        );
 
-                    if (!context.mounted) return;
-                    Navigator.pop(ctx);
+                        if (!context.mounted) return;
+                        Navigator.pop(ctx);
 
-                    if (success) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(isEditing
-                              ? 'تم تعديل الرد وحفظه في Supabase بنجاح'
-                              : 'تم إرسال الرد وتوثيقه في Supabase بنجاح'),
-                          backgroundColor: AppColors.success,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              reviewsProvider.errorMessage ?? 'تعذر حفظ الرد'),
-                          backgroundColor: AppColors.error,
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  },
+                        if (success) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(isEditing
+                                  ? 'تم تعديل الرد وحفظه في Supabase بنجاح'
+                                  : 'تم إرسال الرد وتوثيقه في Supabase بنجاح'),
+                              backgroundColor: AppColors.success,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(reviewsProvider.errorMessage ??
+                                  'تعذر حفظ الرد'),
+                              backgroundColor: AppColors.error,
+                              behavior: SnackBarBehavior.floating,
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                  ],
                 ),
               ],
             );
@@ -212,32 +218,32 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
         content: const Text(
             'هل أنت متأكد من رغبتك في حذف ردك الرسمي على هذا التقييم؟ لا يمكن التراجع عن هذا الإجراء.'),
         actions: [
-          Row(
+          DialogActionsRow(
             children: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: Text('إلغاء', style: AppTextStyles.labelMedium),
               ),
+              CustomButton(
+                text: 'حذف الرد',
+                variant: ButtonVariant.outline,
+                height: 38,
+                onPressed: () async {
+                  Navigator.pop(ctx);
+                  final success = await reviewsProvider.deleteReply(review.id);
+                  if (!context.mounted) return;
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('تم حذف الرد بنجاح من Supabase'),
+                        backgroundColor: AppColors.burgundy,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
+                },
+              ),
             ],
-          ),
-          CustomButton(
-            text: 'حذف الرد',
-            variant: ButtonVariant.outline,
-            height: 38,
-            onPressed: () async {
-              Navigator.pop(ctx);
-              final success = await reviewsProvider.deleteReply(review.id);
-              if (!context.mounted) return;
-              if (success) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('تم حذف الرد بنجاح من Supabase'),
-                    backgroundColor: AppColors.burgundy,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            },
           ),
         ],
       ),
@@ -1451,37 +1457,41 @@ class _ReviewsScreenState extends State<ReviewsScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(
-              'إغلاق',
-              style: GoogleFonts.cairo(
-                fontWeight: FontWeight.w700,
-                color: const Color(0xFF8C7B83),
+          DialogActionsRow(
+            children: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text(
+                  'إغلاق',
+                  style: GoogleFonts.cairo(
+                    fontWeight: FontWeight.w700,
+                    color: const Color(0xFF8C7B83),
+                  ),
+                ),
               ),
-            ),
+              if (!hasReply)
+                CustomButton(
+                  text: 'الرد على التقييم',
+                  icon: Icons.reply,
+                  height: 38,
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showReplyDialog(context, review);
+                  },
+                )
+              else
+                CustomButton(
+                  text: 'تعديل الرد',
+                  icon: Icons.edit_outlined,
+                  height: 38,
+                  variant: ButtonVariant.outline,
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showReplyDialog(context, review);
+                  },
+                ),
+            ],
           ),
-          if (!hasReply)
-            CustomButton(
-              text: 'الرد على التقييم',
-              icon: Icons.reply,
-              height: 38,
-              onPressed: () {
-                Navigator.pop(ctx);
-                _showReplyDialog(context, review);
-              },
-            )
-          else
-            CustomButton(
-              text: 'تعديل الرد',
-              icon: Icons.edit_outlined,
-              height: 38,
-              variant: ButtonVariant.outline,
-              onPressed: () {
-                Navigator.pop(ctx);
-                _showReplyDialog(context, review);
-              },
-            ),
         ],
       ),
     );
