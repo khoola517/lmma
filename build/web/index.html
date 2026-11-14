@@ -45,6 +45,68 @@
         });
       });
     }
+
+    (function () {
+      var sharedCtx = null;
+
+      function getUnlockedAudioContext() {
+        var AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return null;
+        if (!sharedCtx) {
+          sharedCtx = new AudioCtx();
+        }
+        if (sharedCtx.state === 'suspended') {
+          sharedCtx.resume().catch(function () {});
+        }
+        return sharedCtx;
+      }
+
+      // تفعيل سياق الصوت تلقائياً عند أول تفاعل للمستخدم مع الصفحة (نقر أو ضغط مفتاح)
+      ['click', 'pointerdown', 'keydown', 'touchstart'].forEach(function (evtName) {
+        window.addEventListener(evtName, function () {
+          getUnlockedAudioContext();
+        }, { passive: true });
+      });
+
+      window.khadematyPlayChime = function () {
+        try {
+          var ctx = getUnlockedAudioContext();
+          if (!ctx) return false;
+
+          var triggerTones = function () {
+            var now = ctx.currentTime;
+            function playTone(freq, startOffset, duration) {
+              var osc = ctx.createOscillator();
+              var gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(freq, now + startOffset);
+              gain.gain.setValueAtTime(0.001, now + startOffset);
+              gain.gain.exponentialRampToValueAtTime(0.35, now + startOffset + 0.025);
+              gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(now + startOffset);
+              osc.stop(now + startOffset + duration);
+            }
+            // نغمة جرس تنبيه ثنائية واضحة (D5 -> A5)
+            playTone(587.33, 0.0, 0.25);
+            playTone(880.00, 0.13, 0.38);
+          };
+
+          if (ctx.state === 'suspended') {
+            ctx.resume().then(triggerTones).catch(function (e) {
+              console.warn('Khadematy audio resume blocked until interaction:', e);
+            });
+          } else {
+            triggerTones();
+          }
+          return true;
+        } catch (e) {
+          console.warn('Khadematy audio chime error:', e);
+          return false;
+        }
+      };
+    })();
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
